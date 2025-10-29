@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4bc8b855702ec845b14528c8f62f55a, type: 3}
+  m_Name: House_4x2
+  m_EditorClassIdentifier: 
+  tilesVisual:
+  - offset: {x: 0, y: 0}
+    tile: {fileID: 11400000, guid: 6ae841c9cb22429488001a32927f2d59, type: 2}
+    layer: 1
+  - offset: {x: 0, y: 1}
+    tile: {fileID: 11400000, guid: 76298fce0c333b74e9e17c0e85003a0e, type: 2}
+    layer: 2
+  - offset: {x: 0, y: 2}
+    tile: {fileID: 11400000, guid: 8c5ad682c86d1d047971141c24abbbe2, type: 2}
+    layer: 3
+  - offset: {x: 0, y: 3}
+    tile: {fileID: 11400000, guid: b7df7a011dbfc2d418060660468d5637, type: 2}
+    layer: 4
+  - offset: {x: 1, y: 0}
+    tile: {fileID: 11400000, guid: 364d7033059ac324ea8f8d9080c8f3a1, type: 2}
+    layer: 1
+  - offset: {x: 1, y: 1}
+    tile: {fileID: 11400000, guid: 89791c413eccd0e4f9e51fc7b58a39dc, type: 2}
+    layer: 2
+  - offset: {x: 1, y: 2}
+    tile: {fileID: 11400000, guid: 8bb19ddd4111faf499ea0b9316752b82, type: 2}
+    layer: 3
+  - offset: {x: 1, y: 3}
+    tile: {fileID: 11400000, guid: 8117efc03bbd0284586ed75c7f973411, type: 2}
+    layer: 4
+  tilesOccupied:
+  - offset: {x: 0, y: 0}
+    tile: {fileID: 11400000, guid: 6ae841c9cb22429488001a32927f2d59, type: 2}
+    layer: 1
+  - offset: {x: 1, y: 0}
+    tile: {fileID: 11400000, guid: 364d7033059ac324ea8f8d9080c8f3a1, type: 2}
+    layer: 1
+  displayName: Casinha teste
