@@ -73,6 +73,13 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
                 BlockSlot slot = eventData.pointerEnter.GetComponentInParent<BlockSlot>();
                 if (slot != null)
                 {
+                    // Seta o drag height cache no DraggableBlock
+                    var draggable = draggingInstance.GetComponent<DraggableBlock>();
+                    if (draggable != null)
+                    {
+                        var myRect = GetComponent<RectTransform>();
+                        draggable.dragHeightCache = draggable.blockUI.GetTailHeight();
+                    }
                     // Simula que o bloco instanciado está sendo arrastado sobre o slot
                     PointerEventData fakeEvent = new PointerEventData(EventSystem.current);
                     fakeEvent.pointerDrag = draggingInstance;
