@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4bc8b855702ec845b14528c8f62f55a, type: 3}
+  m_Name: "Armaz\xE9m_2x3"
+  m_EditorClassIdentifier: 
+  tilesVisual:
+  - offset: {x: 0, y: 0}
+    tile: {fileID: 11400000, guid: d2db3cb131d1f8448954aa8260e55e9f, type: 2}
+    layer: 1
+  - offset: {x: 1, y: 0}
+    tile: {fileID: 11400000, guid: 353716397d9564348a3dee8b00874c88, type: 2}
+    layer: 1
+  - offset: {x: 2, y: 0}
+    tile: {fileID: 11400000, guid: 325e730f15bea294283feaced6189062, type: 2}
+    layer: 1
+  - offset: {x: 0, y: 1}
+    tile: {fileID: 11400000, guid: 8fe0b649d7aa3394b8acdcac90280828, type: 2}
+    layer: 2
+  - offset: {x: 1, y: 1}
+    tile: {fileID: 11400000, guid: 99e3b1478fa78694a9e6411978eeed3a, type: 2}
+    layer: 2
+  - offset: {x: 2, y: 1}
+    tile: {fileID: 11400000, guid: c83e31646d4db6f4591fbb6cd1a714df, type: 2}
+    layer: 2
+  tilesOccupied:
+  - offset: {x: 0, y: 0}
+    tile: {fileID: 11400000, guid: d2db3cb131d1f8448954aa8260e55e9f, type: 2}
+    layer: 1
+  - offset: {x: 1, y: 0}
+    tile: {fileID: 11400000, guid: 353716397d9564348a3dee8b00874c88, type: 2}
+    layer: 1
+  - offset: {x: 2, y: 0}
+    tile: {fileID: 11400000, guid: 325e730f15bea294283feaced6189062, type: 2}
+    layer: 1
+  displayName: "Armaz\xE9m_1"

@@ -1,10 +1,15 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using TMPro;
 
 public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [Tooltip("Prefab UI que será instanciado na Workspace")]
     public GameObject blockPrefab;
+
+    [Tooltip("Prefab Parâmetros que será instanciado no Bloco Prefab")]
+    public GameObject parameterPrefab;
 
     [Tooltip("RectTransform do painel workspace (onde instanciar)")]
     public RectTransform workspace;
@@ -14,8 +19,10 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
 
     private GameObject draggingInstance;
 
-    public Vector2 offset;
+    private RectTransform rect;
     
+    private Vector2 offset;
+
     void Start()
     {
         if (workspace == null) {
@@ -28,6 +35,20 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         if (blockPrefab == null || workspace == null) return;
 
         draggingInstance = Instantiate(blockPrefab, workspace);
+        RectTransform TopSlot = null;
+        if (draggingInstance.GetComponent<BlockUI>().slotBody == null) { // bloco next
+            TopSlot = draggingInstance.GetComponent<RectTransform>();
+        } else {
+            TopSlot = draggingInstance.transform.Find("TopBody").GetComponent<RectTransform>();
+        }
+        
+        foreach (var parametro in blockData.parametros) {
+            var parametroInstanciado = Instantiate(parameterPrefab, TopSlot);
+            parametroInstanciado.GetComponent<TMP_Dropdown>().captionText.text = parametro.name;
+            parametroInstanciado.GetComponent<TMP_Dropdown>().options.Add(new TMP_Dropdown.OptionData("exemplo...",null)); // por em foreach, e adicionar optiondata pra cada opção dependendo do tipo do parametro
+        }
+        
+        rect = draggingInstance.GetComponent<RectTransform>();
 
         // Configurar o UI do bloco com os dados
         var ui = draggingInstance.GetComponent<BlockUI>();
@@ -35,9 +56,18 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
             ui.Setup(blockData);
         }
 
-        var rect = draggingInstance.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+
         RectTransformUtility.ScreenPointToLocalPointInRectangle(workspace, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
-        rect.anchoredPosition = localPoint;
+        // Converte posição do bloco (em world space) para o espaço da workspace
+        Vector2 blockPosInWorkspace = workspace.InverseTransformPoint(rect.position);
+        if (draggingInstance.GetComponent<BlockUI>().slotBody != null) { // se for bloco body
+            offset = new Vector2((rect.sizeDelta.x)/2, -(rect.sizeDelta.y)/2);
+        } else { // se for bloco next
+            offset = new Vector2((ui.slotNext.GetComponent<RectTransform>().sizeDelta.x)/2, -(ui.slotNext.GetComponent<RectTransform>().sizeDelta.y)/2); 
+        }
+        rect.anchoredPosition = localPoint - offset;
 
         // eu real nem sei se faz sentido esse canvas group (acho que funciona enquanto to fazendo drag do bloco, dai é util mesmo)
         var cg = draggingInstance.GetComponent<CanvasGroup>();
@@ -47,9 +77,8 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
 
     public void OnDrag (PointerEventData eventData) {
         if (draggingInstance == null) return;
-        var rect = draggingInstance.GetComponent<RectTransform>();
         RectTransformUtility.ScreenPointToLocalPointInRectangle(workspace, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
-        rect.anchoredPosition = localPoint;
+        rect.anchoredPosition = localPoint - offset;
     }
 
     public void OnEndDrag(PointerEventData eventData) {

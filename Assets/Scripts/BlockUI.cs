@@ -19,7 +19,7 @@ public class BlockUI : MonoBehaviour
     public BlockUI parentBodyOwner;
 
     [Header("Configurações")]
-    public float defaultSpacerHeight = 10f;
+    public float defaultSpacerHeight = 30f;
 
     public void Setup(BlockData newData) {
         data = newData;
@@ -35,7 +35,7 @@ public class BlockUI : MonoBehaviour
 // ------------ Acessores ------------
 
     // Retorna referência ao próximo bloco no slotNext ou slotBody
-    public BlockUI GetNext() {
+    public BlockUI GetNext() { // SLOT NEXT VAI TER MAIS DE UM FILHO?
         if (slotNext == null) return null;
 
         // iterar de baixo pra cima dentre os filhos de slotNext
@@ -47,7 +47,7 @@ public class BlockUI : MonoBehaviour
         return null;
     }
 
-    public BlockUI GetBody() {
+    public BlockUI GetBody() { // SLOT NEXT VAI TER MAIS DE UM FILHO?
         if (slotBody == null) return null;
 
         // iterar de baixo pra cima dentre os filhos de slotBody
@@ -86,7 +86,7 @@ public class BlockUI : MonoBehaviour
         var next = GetNext();
         if (next != null)
             total += next.GetTailHeight();
-        Debug.Log($"Calculando GetTailHeight para {this}: altura total = {total}");
+        //Debug.Log($"Calculando GetTailHeight para {this}: altura total = {total}");
         return total;
     }
 
@@ -134,18 +134,26 @@ public class BlockUI : MonoBehaviour
     public void AdjustBodySpacers(float delta)
     {
         if (bodyAncestors == null || bodyAncestors.Count == 0) return;
+        print("BodySpacer ajustado");
 
-        foreach (var ancestor in bodyAncestors)
+        foreach (var ancestor in bodyAncestors) // vai de dentro pra fora ou o contrario?
         {
             if (ancestor == null || ancestor.bodySpacer == null) continue;
 
             // Ajusta apenas o eixo Y do sizeDelta
             ancestor.bodySpacer.sizeDelta += new Vector2(0f, delta);
+
+            /* if (ancestor.slotBody.transform.childCount == 0) { //(ancestor.bodySpacer.sizeDelta.y % 100 == defaultSpacerHeight && ancestor.bodySpacer.sizeDelta.y != defaultSpacerHeight) {
+                ancestor.bodySpacer.sizeDelta += new Vector2(0, defaultSpacerHeight); 
+            } else {
+                ancestor.bodySpacer.sizeDelta -= new Vector2(0, defaultSpacerHeight); 
+            }  */
         }
 
         // Agora força o rebuild do layout apenas nos ancestors afetados
         foreach (var ancestor in bodyAncestors)
         {
+            
             var rt = ancestor.GetComponent<RectTransform>();
             if (rt != null) LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
         }

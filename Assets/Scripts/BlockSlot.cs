@@ -23,44 +23,37 @@ public class BlockSlot : MonoBehaviour, IDropHandler
         // Descobre último da linha dropada
         BlockUI tail = draggedBlock.GetTail();
 
-        // Descobre o bloco que já está dentro deste slot (se houver)
+        // Se houver bloco nesse slot, move-o para o tail da linha arrastada
         BlockUI existingBlock = null;
-        if (transform.childCount > 1)
+        if (transform.childCount == 1) // se tem 1 filho (nunca vai ter mais)
         {
-            // Itera de baixo para cima, ignorando RaycastTarget ou outros elementos
-            for (int i = transform.childCount - 1; i >= 0; i--)
-            {
-                var candidate = transform.GetChild(i).GetComponent<BlockUI>();
-                if (candidate != null && candidate != draggedBlock)
-                {
-                    existingBlock = candidate;
-                    break;
-                }
-            }
-        }
-
-        // Se houver um bloco já neste slot, movê-lo para o tail da linha arrastada
-        if (existingBlock != null)
-        {
+            //print(transform); // SlotNext; print(transform.GetChild(0)); // blockPrefabNext;
+            existingBlock = transform.GetChild(0).GetComponent<BlockUI>();
+        // if (existingBlock != null) {}, [so serviria se slot pudesse ter filho sem blockUI, mas nao tem como]
             RectTransform nextSlotTransform = tail.slotNext.GetComponent<RectTransform>();
             existingBlock.transform.SetParent(nextSlotTransform, false);
             existingBlock.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-            existingBlock.transform.localPosition = new Vector3(0, -nextSlotTransform.rect.height, 0); // força z = 0
-            existingBlock.GetComponentInParent<RectTransform>().pivot = new Vector2(0.5f, 1.5f);
+            //existingBlock.transform.localPosition = new Vector3(0, 0, 0); // força z = 0 (da descomentar, so noa settar y e x, so setar z = 0)
+            //existingBlock.GetComponentInParent<RectTransform>().pivot = new Vector2(0.5f, 1.5f);
         }
 
         // Parentar a linha arrastada neste slot
-        // se o slot for body, ajustar o pivot para alinhar melhor
-        if (slotType == SlotType.Body) 
-            rect.pivot = new Vector2(0.4f, 1.5f);
-        else 
-            rect.pivot = new Vector2(0.5f, 1.5f);
         draggedObj.transform.SetParent(transform, false);
         rect.anchoredPosition = Vector2.zero;
         draggedObj.transform.localPosition = new Vector3(rect.localPosition.x, rect.localPosition.y, 0f); // força z = 0
+
+        rect.anchorMin = new Vector2(0, 0);
+        rect.anchorMax = new Vector2(0, 0);
     
         // Determina o contexto do parent (herdar ancestors do parentBlock)
         BlockUI parentBlock = GetComponentInParent<BlockUI>();
+        //print("parentBlock: " + parentBlock);
+
+        if (slotType == SlotType.Body) { 
+            Debug.Log("offset de bloco");
+            rect.anchoredPosition = new Vector2(parentBlock.defaultSpacerHeight, 0);
+            //if (existingBlock == null) parentBlock.bodySpacer.sizeDelta -= new Vector2(0, 30);
+        }
 
         List<BlockUI> parentAncestorList = parentBlock != null ? new List<BlockUI>(parentBlock.bodyAncestors) : null;
         BlockUI parentBodyOwner = (parentBlock != null && slotType == SlotType.Body) ? parentBlock : null;
@@ -80,6 +73,7 @@ public class BlockSlot : MonoBehaviour, IDropHandler
             // soma (pode ser positivo)
             Debug.Log($"Ajustando altura de: {draggedBlock.bodyAncestors.Count} ancestrais do bloco arrastado em: {dragHeight}");
             draggedBlock.AdjustBodySpacers(dragHeight);
+            if (slotType == SlotType.Body && existingBlock == null) draggedBlock.AdjustBodySpacers(-(draggedBlock.defaultSpacerHeight));
         }
 
         // limpa cache do draggable

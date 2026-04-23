@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [HideInInspector] public BlockUI blockUI;
+    //public BlockSlot blockSlot;
     private RectTransform rect; // ns se precisa
     private CanvasGroup canvasGroup;
     private RectTransform workspace;
@@ -13,7 +14,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     private Vector3 originalLocalPos;
     public float dragHeightCache;
 
-    private Vector2 offset; // ns se precisa
+    private Vector2 offset; // precisa, a nao ser q ache alternativa
 
     void Awake()
     {
@@ -33,6 +34,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         Vector2 blockPosInWorkspace = workspace.InverseTransformPoint(rect.position);
         offset = blockPosInWorkspace - localPoint;
 
+        transform.SetAsLastSibling(); // fica na frente de tudo
 
         originalParent = transform.parent;
         originalLocalPos = transform.localPosition;
@@ -42,19 +44,26 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         dragHeightCache = blockUI.GetTailHeight();
 
         // Subtrai essa altura dos blockSpacers dos ancestrais do bloco sendo arrastado
-        if (blockUI.bodyAncestors != null && blockUI.bodyAncestors.Count > 0)
+        if (blockUI.bodyAncestors != null && blockUI.bodyAncestors.Count > 0) // originalParent = slotBody
+            /* if (originalParent.GetComponent<BlockSlot>().slotType == BlockSlot.SlotType.Body) {
+                originalParent.GetComponentInParent<BlockUI>().bodySpacer.sizeDelta += new Vector2(0, 30);
+            } */
             Debug.Log($"Subtraindo altura de: {blockUI.bodyAncestors.Count} ancestrais do bloco arrastado em: {dragHeightCache}");
             blockUI.AdjustBodySpacers(-dragHeightCache);
+            if (originalParent != workspace && originalParent.GetComponent<BlockSlot>().slotType == BlockSlot.SlotType.Body) blockUI.AdjustBodySpacers(30);
 
         // Parenta na workspace (ou root) para arrastar livremente
         if (workspace != null) {
             transform.SetParent(workspace, true);
         }
+
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
     }
 
     public void OnDrag(PointerEventData eventData) {
         RectTransformUtility.ScreenPointToLocalPointInRectangle(workspace, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
-        rect.anchoredPosition = localPoint + offset;
+        rect.localPosition = localPoint + offset;
     }
 
     public void OnEndDrag(PointerEventData eventData) {
@@ -70,8 +79,11 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             var parentBlock = transform.parent.GetComponentInParent<BlockUI>();
             if (parentBlock == null)
             {
-                blockUI.bodyAncestors.Clear();
-                blockUI.parentBodyOwner = null;
+                // resetar ancestrais
+                blockUI.AssignBodyAncestorsRecursive(null, null);
+                // resetar currentblock do slot que tava alocado
+                var slotParent = originalParent.GetComponent<BlockSlot>();
+                if (slotParent != null) slotParent.currentBlock = null; // atual = blocoDrag.slotPai.currentBlock; talvez arrumar pra ...BlockSlot.currentBlock (nao parece ta dando problema, n se mexe em time que n ta perdendo)
             }
         }
     }
