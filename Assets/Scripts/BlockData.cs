@@ -1,12 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-
-[System.Serializable]
-public class ParameterInfo {
-    public ParameterType type;
-    public string name;
-
-}
+//using TMPro; precisa? sepa se usar OptionData do dropdown diretamente sim
 
 [CreateAssetMenu(menuName = "Block Programming/Block Data")]
 public class BlockData : ScriptableObject
@@ -15,7 +9,7 @@ public class BlockData : ScriptableObject
     public BlockType type;
     public Color color = Color.white;
 
-    public List<ParameterInfo> parametros = new List<ParameterInfo>();
+    public List<ParameterInfo> listaParametros = new List<ParameterInfo>();
 }
 
 public enum BlockType {
@@ -25,8 +19,13 @@ public enum BlockType {
     Event
 }
 
-public enum ParameterType {
-    Boolean,
-    Number,
-    Direction
+[System.Serializable]
+public class ParameterInfo {
+    public string name;
+    [SerializeField] public UnityEditor.MonoScript parameterScriptData;
+
 }
+
+
+
+

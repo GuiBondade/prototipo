@@ -8,14 +8,16 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
     [Tooltip("Prefab UI que será instanciado na Workspace")]
     public GameObject blockPrefab;
 
-    [Tooltip("Prefab Parâmetros que será instanciado no Bloco Prefab")]
-    public GameObject parameterPrefab;
+    //[Tooltip("Prefab Parâmetros que será instanciado no Bloco Prefab")]
+    //public GameObject parameterPrefab; // é pra eu ter posto no block data, se sim deleta isso
 
     [Tooltip("RectTransform do painel workspace (onde instanciar)")]
     public RectTransform workspace;
 
     [Tooltip("BlockData associado a este item da paleta")]
     public BlockData blockData;
+
+    [HideInInspector]public GameObject ParameterPrefab;
 
     private GameObject draggingInstance;
 
@@ -29,25 +31,32 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
             var go = GameObject.Find("Workspace");
             if (go) workspace = go.GetComponent<RectTransform>();
         }
+
+        ParameterPrefab = Resources.Load<GameObject>("GenericParameter");
     }
 
     public void OnBeginDrag(PointerEventData eventData) {
         if (blockPrefab == null || workspace == null) return;
 
         draggingInstance = Instantiate(blockPrefab, workspace);
+
+        // parametros
         RectTransform TopSlot = null;
         if (draggingInstance.GetComponent<BlockUI>().slotBody == null) { // bloco next
             TopSlot = draggingInstance.GetComponent<RectTransform>();
-        } else {
+        } else { // bloco body
             TopSlot = draggingInstance.transform.Find("TopBody").GetComponent<RectTransform>();
         }
-        
-        foreach (var parametro in blockData.parametros) {
-            var parametroInstanciado = Instantiate(parameterPrefab, TopSlot);
-            parametroInstanciado.GetComponent<TMP_Dropdown>().captionText.text = parametro.name;
-            parametroInstanciado.GetComponent<TMP_Dropdown>().options.Add(new TMP_Dropdown.OptionData("exemplo...",null)); // por em foreach, e adicionar optiondata pra cada opção dependendo do tipo do parametro
+        foreach (var parametro in blockData.listaParametros) {
+            var parametroInstanciado = Instantiate(ParameterPrefab, TopSlot);
+            var paramComponent = parametroInstanciado.AddComponent(parametro.parameterScriptData.GetClass()) as ParameterSetup;
+            paramComponent.Initialize(parametroInstanciado.GetComponent<ParameterConfig>().refs);
+            paramComponent.Setup(parametro.name);
+            // add component parameterSetup<T> a partir de referencia do BlockData
         }
         
+        
+
         rect = draggingInstance.GetComponent<RectTransform>();
 
         // Configurar o UI do bloco com os dados
@@ -62,11 +71,15 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         RectTransformUtility.ScreenPointToLocalPointInRectangle(workspace, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
         // Converte posição do bloco (em world space) para o espaço da workspace
         Vector2 blockPosInWorkspace = workspace.InverseTransformPoint(rect.position);
-        if (draggingInstance.GetComponent<BlockUI>().slotBody != null) { // se for bloco body
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+
+        offset = new Vector2((ui.label.GetComponent<RectTransform>().sizeDelta.x)/2, -(ui.label.GetComponent<RectTransform>().sizeDelta.y)/2);
+        /* if (draggingInstance.GetComponent<BlockUI>().slotBody != null) { // se for bloco body
             offset = new Vector2((rect.sizeDelta.x)/2, -(rect.sizeDelta.y)/2);
         } else { // se for bloco next
-            offset = new Vector2((ui.slotNext.GetComponent<RectTransform>().sizeDelta.x)/2, -(ui.slotNext.GetComponent<RectTransform>().sizeDelta.y)/2); 
-        }
+            offset = new Vector2((ui.label.GetComponent<RectTransform>().sizeDelta.x)/2, -(ui.label.GetComponent<RectTransform>().sizeDelta.y)/2); 
+        } */
         rect.anchoredPosition = localPoint - offset;
 
         // eu real nem sei se faz sentido esse canvas group (acho que funciona enquanto to fazendo drag do bloco, dai é util mesmo)
