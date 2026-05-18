@@ -5,17 +5,11 @@ using TMPro;
 
 public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    [Tooltip("Prefab UI que será instanciado na Workspace")]
-    public GameObject blockPrefab;
+    private CanvasAreasManager canvasAreasManager;
 
-    //[Tooltip("Prefab Parâmetros que será instanciado no Bloco Prefab")]
-    //public GameObject parameterPrefab; // é pra eu ter posto no block data, se sim deleta isso
-
-    [Tooltip("RectTransform do painel workspace (onde instanciar)")]
-    public RectTransform workspace;
-
-    [Tooltip("BlockData associado a este item da paleta")]
     public BlockData blockData;
+
+    public TMP_Text label;
 
     [HideInInspector]public GameObject ParameterPrefab;
 
@@ -23,64 +17,68 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
 
     private RectTransform rect;
     
-    private Vector2 offset;
+    private ZoomScrollWorkspace scrollWorkspace;
+
+    private static Vector3 GetMouseScreenPosition()
+    {
+        Vector3 mouseWorldPos = Input.mousePosition;
+        mouseWorldPos.z = 0f;
+        return mouseWorldPos;
+    }
 
     void Start()
     {
-        if (workspace == null) {
-            var go = GameObject.Find("Workspace");
-            if (go) workspace = go.GetComponent<RectTransform>();
-        }
-
         ParameterPrefab = Resources.Load<GameObject>("GenericParameter");
+
+        canvasAreasManager = CanvasAreasManager.instancia;
+
+        label = GetComponentInChildren<TMP_Text>(); // precisa? como é prefab acho que nao
+        label.text = blockData.blockName;
+
+        scrollWorkspace = canvasAreasManager.visibleWorkspace.GetComponent<ZoomScrollWorkspace>();
     }
 
     public void OnBeginDrag(PointerEventData eventData) {
-        if (blockPrefab == null || workspace == null) return;
+        if (blockData.blockPrefab == null) return;
+        BlockerManager.instancia.Reset();
 
-        draggingInstance = Instantiate(blockPrefab, workspace);
+        draggingInstance = Instantiate(blockData.blockPrefab, canvasAreasManager.canvasProgramming); // por canvas Programming aqui (pega por tag sei la)
+        var ui = draggingInstance.GetComponent<BlockUI>();
+        rect = draggingInstance.GetComponent<RectTransform>();
 
-        // parametros
-        RectTransform TopSlot = null;
+        // parametros são setados antes da propria UI, ta certo?
+        /* RectTransform TopSlot = null;
         if (draggingInstance.GetComponent<BlockUI>().slotBody == null) { // bloco next
             TopSlot = draggingInstance.GetComponent<RectTransform>();
         } else { // bloco body
             TopSlot = draggingInstance.transform.Find("TopBody").GetComponent<RectTransform>();
-        }
+        } */
         foreach (var parametro in blockData.listaParametros) {
-            var parametroInstanciado = Instantiate(ParameterPrefab, TopSlot);
-            var paramComponent = parametroInstanciado.AddComponent(parametro.parameterScriptData.GetClass()) as ParameterSetup;
-            paramComponent.Initialize(parametroInstanciado.GetComponent<ParameterConfig>().refs);
+            var parametroInstanciado = Instantiate(ParameterPrefab, ui.TopSlot);
+            var paramComponent = parametroInstanciado.AddComponent(parametro.ScriptTypeParameter.GetClass()) as ParameterSetup;
+            var paramReference = parametroInstanciado.GetComponent<ReferenceHolder>();
+            paramComponent.Initialize(paramReference);
+            ui.parameterInitialList.Add(paramReference);
             paramComponent.Setup(parametro.name);
+            parametroInstanciado.GetComponent<AdjustWidthByText>().AdjustWidth();
             // add component parameterSetup<T> a partir de referencia do BlockData
         }
         
-        
-
-        rect = draggingInstance.GetComponent<RectTransform>();
-
         // Configurar o UI do bloco com os dados
-        var ui = draggingInstance.GetComponent<BlockUI>();
         if (ui != null && blockData != null) {
-            ui.Setup(blockData);
+            ui.SetupUI(blockData);
         }
 
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
 
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(workspace, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
-        // Converte posição do bloco (em world space) para o espaço da workspace
-        Vector2 blockPosInWorkspace = workspace.InverseTransformPoint(rect.position);
+        rect.pivot = new Vector2(0.5f, 0.5f);
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
 
-        offset = new Vector2((ui.label.GetComponent<RectTransform>().sizeDelta.x)/2, -(ui.label.GetComponent<RectTransform>().sizeDelta.y)/2);
-        /* if (draggingInstance.GetComponent<BlockUI>().slotBody != null) { // se for bloco body
-            offset = new Vector2((rect.sizeDelta.x)/2, -(rect.sizeDelta.y)/2);
-        } else { // se for bloco next
-            offset = new Vector2((ui.label.GetComponent<RectTransform>().sizeDelta.x)/2, -(ui.label.GetComponent<RectTransform>().sizeDelta.y)/2); 
-        } */
-        rect.anchoredPosition = localPoint - offset;
+        rect.position = GetMouseScreenPosition();
+        rect.localScale = canvasAreasManager.contentWorkspace.localScale;
+        scrollWorkspace.blockInDrag = rect; // altera bloco a ter scale alterado com scroll
 
         // eu real nem sei se faz sentido esse canvas group (acho que funciona enquanto to fazendo drag do bloco, dai é util mesmo)
         var cg = draggingInstance.GetComponent<CanvasGroup>();
@@ -90,8 +88,7 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
 
     public void OnDrag (PointerEventData eventData) {
         if (draggingInstance == null) return;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(workspace, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
-        rect.anchoredPosition = localPoint - offset;
+        rect.position = GetMouseScreenPosition();
     }
 
     public void OnEndDrag(PointerEventData eventData) {
@@ -101,13 +98,15 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         var cg = draggingInstance.GetComponent<CanvasGroup>();
         if (cg) cg.blocksRaycasts = true;
 
+        scrollWorkspace.blockInDrag = null;
+
         // Se liberou fora da workspace, descarta; caso contrário mantém
-        if (!RectTransformUtility.RectangleContainsScreenPoint(workspace, eventData.position, eventData.pressEventCamera)) {
+        if (!RectTransformUtility.RectangleContainsScreenPoint(canvasAreasManager.visibleWorkspace, eventData.position, eventData.pressEventCamera)) {
             Destroy(draggingInstance);
         }
         else {
             // Por padrão, coloca como filho do workspace
-            draggingInstance.transform.SetParent(workspace, true);
+            draggingInstance.transform.SetParent(canvasAreasManager.contentWorkspace, true);
 
             // Se estiver sobre um BlockSlot, coloca como filho dele
             if (eventData.pointerEnter != null)
@@ -129,7 +128,6 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
                 }
             }
         }
-
         draggingInstance = null;
     }
 

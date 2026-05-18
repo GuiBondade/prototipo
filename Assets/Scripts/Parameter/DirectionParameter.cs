@@ -6,6 +6,8 @@ using System.Collections.Generic;
 public class DirectionParameter : ParameterSetup
 {
     public DirectionParameter() {
+        type = ParameterType.DirectionParameter;
+
         sections = new List<ParameterSections> (){
             ParameterSections.DirectionValues
         };

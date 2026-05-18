@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Esperar
   m_EditorClassIdentifier: 
   blockName: Esperar
-  type: 0
+  function: 0
   color: {r: 0.93725497, g: 0.10588236, b: 0.14117648, a: 1}
+  blockPrefab: {fileID: 641132277461592841, guid: bb11193390eb73f4c953f03f8a84cfa3, type: 3}
+  type: 0
   listaParametros:
   - name: tempo
-    parameterScriptData: {fileID: 11500000, guid: 0b5ec1319b191d943b75a1f16dd5b461, type: 3}
+    ScriptTypeParameter: {fileID: 11500000, guid: 0b5ec1319b191d943b75a1f16dd5b461, type: 3}

@@ -13,10 +13,12 @@ MonoBehaviour:
   m_Name: Andar
   m_EditorClassIdentifier: 
   blockName: Andar
-  type: 0
+  function: 0
   color: {r: 1, g: 1, b: 1, a: 1}
+  blockPrefab: {fileID: 641132277461592841, guid: bb11193390eb73f4c953f03f8a84cfa3, type: 3}
+  type: 0
   listaParametros:
   - name: Quantidade
-    parameterScriptData: {fileID: 11500000, guid: 0b5ec1319b191d943b75a1f16dd5b461, type: 3}
+    ScriptTypeParameter: {fileID: 11500000, guid: 0b5ec1319b191d943b75a1f16dd5b461, type: 3}
   - name: "Dire\xE7\xE3o"
-    parameterScriptData: {fileID: 11500000, guid: 5a8a3bb33e6f698488b17c8d3027aaf6, type: 3}
+    ScriptTypeParameter: {fileID: 11500000, guid: 5a8a3bb33e6f698488b17c8d3027aaf6, type: 3}

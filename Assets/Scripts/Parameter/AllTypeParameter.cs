@@ -3,23 +3,28 @@ using UnityEngine;
 using System.Collections.Generic;
 //using UnityEngine.EventSystems;
 
-public class BooleanParameter : ParameterSetup
+public class AllTypeParameter : ParameterSetup
 {
-    public BooleanParameter() {
-        type = ParameterType.BooleanParameter;
+    public AllTypeParameter() {
+        type = ParameterType.AllTypeParameter;
 
         sections = new List<ParameterSections> (){
+            ParameterSections.IntValues,
+            ParameterSections.IntOperations,
+            ParameterSections.DirectionValues,
+            ParameterSections.MaterialValues,
             ParameterSections.BoolValues,
             ParameterSections.BoolAllComparisonOperations,
             ParameterSections.BoolIntComparisonOperations,
             ParameterSections.BoolLogicOperations
+            
         };
 
-        CanInputInt = false;
+        CanInputInt = true;
     }
 
     public override void Setup(string paramName) {
-        if (paramName == null) paramName = "Inserir Valor Booleano";
+        if (paramName == null) paramName = "Inserir Valor";
         base.Setup(paramName);
     }
 

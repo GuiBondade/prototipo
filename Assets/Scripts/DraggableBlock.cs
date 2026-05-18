@@ -1,20 +1,28 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-// [RequireComponent(typeof(BlockUI))] (pra que serve?) 
-public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+[RequireComponent(typeof(BlockUI))]
+public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerUpHandler
 {
     [HideInInspector] public BlockUI blockUI;
     //public BlockSlot blockSlot;
     private RectTransform rect; // ns se precisa
     private CanvasGroup canvasGroup;
-    private RectTransform workspace;
+    private CanvasAreasManager canvasAreasManager;
+    private ZoomScrollWorkspace scrollWorkspace;
 
     private Transform originalParent;
     private Vector3 originalLocalPos;
     public float dragHeightCache;
 
-    private Vector2 offset; // precisa, a nao ser q ache alternativa
+    private bool isRightClickDragging = false;
+
+    private static Vector3 GetMouseScreenPosition()
+    {
+        Vector3 mouseWorldPos = Input.mousePosition;
+        mouseWorldPos.z = 0f;
+        return mouseWorldPos;
+    }
 
     void Awake()
     {
@@ -23,16 +31,18 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
         
-        var go = GameObject.Find("Workspace");
-        if (go) workspace = go.GetComponent<RectTransform>();
+        canvasAreasManager = CanvasAreasManager.instancia;
+        scrollWorkspace = canvasAreasManager.visibleWorkspace.GetComponent<ZoomScrollWorkspace>();
     }
 
     public void OnBeginDrag(PointerEventData eventData) {
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(workspace, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
-      
-        // Converte posição do bloco (em world space) para o espaço da workspace
-        Vector2 blockPosInWorkspace = workspace.InverseTransformPoint(rect.position);
-        offset = blockPosInWorkspace - localPoint;
+        if (isRightClickDragging || eventData.button == PointerEventData.InputButton.Right)
+        {
+            eventData.pointerDrag = null;
+            return;
+        }
+
+        BlockerManager.instancia.Reset();
 
         transform.SetAsLastSibling(); // fica na frente de tudo
 
@@ -48,29 +58,38 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             /* if (originalParent.GetComponent<BlockSlot>().slotType == BlockSlot.SlotType.Body) {
                 originalParent.GetComponentInParent<BlockUI>().bodySpacer.sizeDelta += new Vector2(0, 30);
             } */
-            Debug.Log($"Subtraindo altura de: {blockUI.bodyAncestors.Count} ancestrais do bloco arrastado em: {dragHeightCache}");
+            //Debug.Log($"Subtraindo altura de: {blockUI.bodyAncestors.Count} ancestrais do bloco arrastado em: {dragHeightCache}");
             blockUI.AdjustBodySpacers(-dragHeightCache);
-            if (originalParent != workspace && originalParent.GetComponent<BlockSlot>().slotType == BlockSlot.SlotType.Body) blockUI.AdjustBodySpacers(30);
+            if (originalParent != canvasAreasManager.contentWorkspace && originalParent.TryGetComponent<BlockSlot>(out BlockSlot slot)) {
+                if (slot.slotType == BlockSlot.SlotType.Body) {
+                    blockUI.AdjustBodySpacers(30);
+                }
+            } 
 
         // Parenta na workspace (ou root) para arrastar livremente
-        if (workspace != null) {
-            transform.SetParent(workspace, true);
-        }
+        transform.SetParent(canvasAreasManager.canvasProgramming, true);
 
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
+
+        rect.pivot = new Vector2(0.5f, 0.5f);
+
+        scrollWorkspace.blockInDrag = rect; // altera bloco a ter scale alterado com scroll
     }
 
     public void OnDrag(PointerEventData eventData) {
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(workspace, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
-        rect.localPosition = localPoint + offset;
+        if (isRightClickDragging || eventData.button == PointerEventData.InputButton.Right) return;
+        rect.position = GetMouseScreenPosition();
     }
 
     public void OnEndDrag(PointerEventData eventData) {
+        if (isRightClickDragging || eventData.button == PointerEventData.InputButton.Right) return;
         canvasGroup.blocksRaycasts = true;
+        
+        scrollWorkspace.blockInDrag = null;
 
         // Se soltar fora da workspace, destruir
-        if (!RectTransformUtility.RectangleContainsScreenPoint(workspace, eventData.position, eventData.pressEventCamera)) {
+        if (!RectTransformUtility.RectangleContainsScreenPoint(canvasAreasManager.visibleWorkspace, eventData.position, eventData.pressEventCamera)) {
             Destroy(gameObject);
         }
         // verificar se foi solto em um slot de bloco, caso não, resetar os ancestrais
@@ -79,12 +98,30 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             var parentBlock = transform.parent.GetComponentInParent<BlockUI>();
             if (parentBlock == null)
             {
+                transform.SetParent(canvasAreasManager.contentWorkspace, true);
                 // resetar ancestrais
                 blockUI.AssignBodyAncestorsRecursive(null, null);
                 // resetar currentblock do slot que tava alocado
                 var slotParent = originalParent.GetComponent<BlockSlot>();
-                if (slotParent != null) slotParent.currentBlock = null; // atual = blocoDrag.slotPai.currentBlock; talvez arrumar pra ...BlockSlot.currentBlock (nao parece ta dando problema, n se mexe em time que n ta perdendo)
+                if (slotParent != null) slotParent.currentBlock = null;
             }
+        }
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            isRightClickDragging = true;
+            eventData.pointerDrag = null; // Cancela o rastreamento de arrasto na UI da Unity
+        }
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            isRightClickDragging = false;
         }
     }
 }

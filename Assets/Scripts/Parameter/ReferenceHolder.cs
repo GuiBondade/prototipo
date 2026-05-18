@@ -14,9 +14,9 @@ public class ReferenceHolder : MonoBehaviour
 
     public GameObject sectionPrefab;
 
-    public GameObject Value_1; //[HideInInspector]
+    public GameObject leftOperand; //[HideInInspector]
 
-    public GameObject Value_2; //[HideInInspector]
+    public GameObject rightOperand; //[HideInInspector]
 
     public GameObject selectionArea;
 
@@ -24,7 +24,7 @@ public class ReferenceHolder : MonoBehaviour
 
     public GameObject valuePrefab;
 
-    [HideInInspector] public GameObject selectedValue;
+    public GameObject selectedValue;
 
     [HideInInspector] public GameObject selectedSection;
 }

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 public class MaterialParameter : ParameterSetup
 {
     public MaterialParameter() {
+        type = ParameterType.MaterialParameter;
+
         sections = new List<ParameterSections> (){
             ParameterSections.MaterialValues
         };

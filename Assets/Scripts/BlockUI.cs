@@ -10,6 +10,8 @@ public class BlockUI : MonoBehaviour
     public TMP_Text label;
 
     [HideInInspector] public BlockData data;
+    public RectTransform TopSlot;
+    public List<ReferenceHolder> parameterInitialList;
     public BlockSlot slotNext;
     public BlockSlot slotBody;
     public RectTransform bodySpacer;
@@ -21,7 +23,7 @@ public class BlockUI : MonoBehaviour
     [Header("Configurações")]
     public float defaultSpacerHeight = 30f;
 
-    public void Setup(BlockData newData) {
+    public void SetupUI(BlockData newData) {
         data = newData;
 
         if (label != null) label.text = newData.blockName;
@@ -134,7 +136,7 @@ public class BlockUI : MonoBehaviour
     public void AdjustBodySpacers(float delta)
     {
         if (bodyAncestors == null || bodyAncestors.Count == 0) return;
-        print("BodySpacer ajustado");
+        //print("BodySpacer ajustado");
 
         foreach (var ancestor in bodyAncestors) // vai de dentro pra fora ou o contrario?
         {

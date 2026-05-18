@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Se
   m_EditorClassIdentifier: 
   blockName: Se
-  type: 1
+  function: 0
   color: {r: 0, g: 0.75, b: 1, a: 1}
+  blockPrefab: {fileID: 4921128051467867969, guid: 2824b71f63d07ec4da942216eeb0c5c9, type: 3}
+  type: 1
   listaParametros:
   - name: "Condi\xE7\xE3o"
-    parameterScriptData: {fileID: 11500000, guid: 2f9c67df0199a0e4f8ec74e7483a0be8, type: 3}
+    ScriptTypeParameter: {fileID: 11500000, guid: 2f9c67df0199a0e4f8ec74e7483a0be8, type: 3}

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 public class IntParameter : ParameterSetup
 {
     public IntParameter() {
+        type = ParameterType.IntParameter;
+
         sections = new List<ParameterSections> (){
             ParameterSections.IntValues,
             ParameterSections.IntOperations

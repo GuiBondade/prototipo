@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 //using UnityEngine.EventSystems; */
@@ -15,6 +16,14 @@ public enum ParameterSections {
     MaterialValues
 }
 
+public enum ParameterType {
+    AllTypeParameter,
+    BooleanParameter,
+    DirectionParameter,
+    IntParameter,
+    MaterialParameter
+}
+
 public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
 {   
     // criação de bloco: definicao de tipo por inspector (dicionario onde pode ser adicionado parametros e cada parametro tem uma variavel tipo a ser atribuida)
@@ -22,11 +31,14 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
 
     public ReferenceHolder refs;
 
+
     [HideInInspector] public GameObject inputTextInstance; 
     
+    [SerializeField] public ParameterType type;
     [SerializeField] protected bool CanInputInt;
     [SerializeField] public List<ParameterSections> sections; 
 
+    // salvar em arquivo JSON ou algum BD?? ve depois
     private readonly Dictionary<ParameterSections, List<string>> SectionValues = new()
     {
         {
@@ -43,11 +55,11 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
         },
         {
             ParameterSections.BoolLogicOperations,
-            new List<string> {"E", "OU", "NÃO"}
+            new List<string> {"E", "OU"}
         },
         {
             ParameterSections.IntValues,
-            new List<string> {"input int"}
+            new List<string> {"Digitar Valor"}
         },
         {
             ParameterSections.IntOperations,
@@ -85,21 +97,21 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
             //section.GetComponent<OptionInfo>().tipo = sectionName; //onde vai ser decidido as seções de section
             var sectionOptions = sectionInstance.GetComponent<SectionInfo>();
             sectionOptions.label.text = section.ToString();
+            sectionOptions.label.ForceMeshUpdate();
             sectionOptions.sectionCurrent = section;
-
+        
             // tem que settar numa var do option info a seção de cada option(vai ter o enum da seção, e a lista dos valores(na hora de instanciar os valores, le os valores da lista num foreach, e adicionar somente um item na lista(que é o valor lido), e vai ter o mesmo enum da seção pra identificação))
                 // pra usar obter valores (no parameter config) atraves dos valores do option info
-            sectionOptions.sectionCurrent = section;
             foreach (var value in SectionValues[section]) {
                 sectionOptions.valueList.Add(value);
             }
         }
+        refs.sectionContent.GetComponent<AdjustWidthByText>().AdjustWidth();
         if (CanInputInt) { 
             var inputTextInstance = Instantiate(refs.inputTextPrefab, refs.childParamLayout.transform);
             GetComponent<ParameterConfig>().SetInputText(inputTextInstance);
         } 
     }
-  
 
     
 }

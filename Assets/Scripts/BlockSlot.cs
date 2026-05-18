@@ -25,7 +25,7 @@ public class BlockSlot : MonoBehaviour, IDropHandler
 
         // Se houver bloco nesse slot, move-o para o tail da linha arrastada
         BlockUI existingBlock = null;
-        if (transform.childCount == 1) // se tem 1 filho (nunca vai ter mais)
+        if (transform.childCount == 1) // se tem 1 filho (nunca vai ter mais que 1, é pra saber se tem ou não)
         {
             //print(transform); // SlotNext; print(transform.GetChild(0)); // blockPrefabNext;
             existingBlock = transform.GetChild(0).GetComponent<BlockUI>();
@@ -44,13 +44,17 @@ public class BlockSlot : MonoBehaviour, IDropHandler
 
         rect.anchorMin = new Vector2(0, 0);
         rect.anchorMax = new Vector2(0, 0);
+
+        rect.pivot = new Vector2(0f,1f);
+
+        rect.localScale = transform.localScale;
     
         // Determina o contexto do parent (herdar ancestors do parentBlock)
         BlockUI parentBlock = GetComponentInParent<BlockUI>();
         //print("parentBlock: " + parentBlock);
 
         if (slotType == SlotType.Body) { 
-            Debug.Log("offset de bloco");
+            //Debug.Log("offset de bloco");
             rect.anchoredPosition = new Vector2(parentBlock.defaultSpacerHeight, 0);
             //if (existingBlock == null) parentBlock.bodySpacer.sizeDelta -= new Vector2(0, 30);
         }
@@ -71,7 +75,7 @@ public class BlockSlot : MonoBehaviour, IDropHandler
         if (parentBlock != null && draggedBlock.bodyAncestors != null && draggedBlock.bodyAncestors.Count > 0)
         {
             // soma (pode ser positivo)
-            Debug.Log($"Ajustando altura de: {draggedBlock.bodyAncestors.Count} ancestrais do bloco arrastado em: {dragHeight}");
+            //Debug.Log($"Ajustando altura de: {draggedBlock.bodyAncestors.Count} ancestrais do bloco arrastado em: {dragHeight}");
             draggedBlock.AdjustBodySpacers(dragHeight);
             if (slotType == SlotType.Body && existingBlock == null) draggedBlock.AdjustBodySpacers(-(draggedBlock.defaultSpacerHeight));
         }
