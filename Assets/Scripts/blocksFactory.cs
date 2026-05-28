@@ -4,9 +4,6 @@ using System.Collections.Generic;
 
 public class blocksFactory : MonoBehaviour
 {
-    // vai ser chamado pelo workspacebuild e palette item, etc
-    // e vai ser o intermedio entre eles e o pool
-
     public ProgrammingPool pools;
     public BlockDatas blockDatas;
 
@@ -27,9 +24,6 @@ public class blocksFactory : MonoBehaviour
             case PrefabsId.body:
                 block = InitializeBody();
                 break;
-            /* case PrefabsId.parameter:
-                block = InitializeParameter(blockData);
-                break; */ // na verdade eu vou chamar isso no proprio workspace builder, nao precisa ta aqui
         } 
 
         if (block.TryGetComponent<BlockUI>(out BlockUI ui)) { //tem nem pq verificar
@@ -67,8 +61,6 @@ public class blocksFactory : MonoBehaviour
         var blockNext = ui.GetNext();
         if (blockNext != null) CleanUpBlock(blockNext.gameObject);        
 
-        //block.SetParent(pools.blockNextPool); // tem que fazer no script de pools direto
-
         pools.ReleaseBlockNext(block);
     }
 
@@ -90,19 +82,35 @@ public class blocksFactory : MonoBehaviour
     }
 
     // Functions Parameter
-    public GameObject InitializeParameter(Transform parent) { // passar data de parametro? pra dar setup ja (setup do parameter setup?, parameternode?)
+    public ReferenceHolder InitializeParameter(string paramName, ParameterType type, Transform parent) { // passar data de parametro? pra dar setup ja (setup do parameter setup?, parameternode?)
         var parameter = pools.GetParameter();
-        // addcomponent(parameterSetup)
-        // .setup()
+        
+        var paramRefs = parameter.GetComponent<ReferenceHolder>();
+
+        GameObject rootParameter = null; 
+        if (parent.GetComponent<ReferenceHolder>() == null) {
+            paramRefs.rootParameter = parameter;
+        } else {
+            paramRefs.rootParameter = blockParent.GetComponent<ReferenceHolder>().rootParameter;
+        }
+
+        paramSetup = parameter.AddComponent<Type.GetType(type)>() as ParameterSetup;
+        paramRefs.type = type;
+
+        paramSetup.Initialize(paramRefs);
+        paramSetup.Setup(paramName);
+        paramInstance.GetComponent<AdjustWidthByText>().AdjustWidth();
         
         parameter.transform.SetParent(parent, false);
 
-        return parameter;
+        return paramRefs;
     }
 
     public void CleanUpParameter(GameObject parameter) {
         var paramRefs = parameter.GetComponent<ReferenceHolder>();
-        // precisa mais algo?? (anular valor escolhido?)
+        if (paramRefs.inputText != null) paramRefs.inputText.SetActive(false);
+        paramRefs.parentesesInstance.SetActive(false);
+
         if (paramRefs.leftOperand != null) {
             CleanUpParameter(paramRefs.leftOperand);
         }
@@ -111,5 +119,46 @@ public class blocksFactory : MonoBehaviour
         }
 
         pools.ReleaseParameter(parameter);
+    }
+
+    // fazer initialize e cleanup pra value/section tambem (dai ja ve se une section e value) 
+    // passar o sectonInfo/valueInfo como parametro pro initializeOption?
+
+    public SectionInfo InitializeSection(ParameterSections sectionName, List<string> values/*nao sei se é lista de string mesmo*/ , Transform parent) {
+        var section = pools.GetSection();
+
+        var sectionOptions = section.GetComponent<SectionInfo>();
+        sectionOptions.label.text = sectionName.ToString();
+        sectionOptions.label.ForceMeshUpdate();
+        sectionOptions.sectionCurrent = sectionName;
+
+        section.transform.SetParent(parent, false);
+
+        return sectionOptions;
+    }
+
+    public void CleanUpSection(GameObject section) {
+        // pegar os values
+        // dar release nos values
+        pools.ReleaseSection(section);
+    }
+
+    public void InitializeValue(string valor, Transform parent) {
+        var value = pools.GetValue();
+
+        var valueInfo = value.GetComponent<ValueInfo>(); 
+        valueInfo.label.text = valor;
+        valueInfo.label.ForceMeshUpdate();
+        valueInfo.sectionCurrent = sectionInfo.sectionCurrent;
+        valueInfo.value = valor;
+
+        value.transform.SetParent(parent, false);
+
+        return value;
+    }
+
+    public void CleanUpValue(GameObject value) {
+
+        pools.ReleaseValue(value);
     }
 }

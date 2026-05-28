@@ -23,7 +23,7 @@ public enum BlockFunction { // alterar depois, nao sei como (talvez enum de cham
 [System.Serializable]
 public class ParameterInfo {
     public string name;
-    public UnityEditor.MonoScript ScriptTypeParameter;
+    public ParameterType type;
 }
 
 public enum PrefabsId {

@@ -31,7 +31,6 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
 
     public ReferenceHolder refs;
 
-
     [HideInInspector] public GameObject inputTextInstance; 
     
     [SerializeField] public ParameterType type;
@@ -39,6 +38,9 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
     [SerializeField] public List<ParameterSections> sections; 
 
     // salvar em arquivo JSON ou algum BD?? ve depois
+    //
+    // VE JEITO MELHOR QUE ESSE DICIONARIO POR FAVOR
+    //
     private readonly Dictionary<ParameterSections, List<string>> SectionValues = new()
     {
         {
@@ -78,40 +80,32 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
     public void Initialize(ReferenceHolder references)
     {
         this.refs = references;
-        //OnInitialized();
     }
-
-    //protected virtual void OnInitialized() { }
 
     public string GetIntValueAt(int index) {
         var valuesList = SectionValues[ParameterSections.IntValues];
         return valuesList[index];
     }
     
-    public virtual void Setup(string name) 
+    public virtual void Setup(string name) // trocar essa função INTEIRA direto pelo InitializeSection()? (melhor nao, ja que essa da setup em varios sections e outras coisas)
     {
         var placeholderTMPText = refs.placeholderLabel.GetComponent<TMP_Text>();
         placeholderTMPText.text = name;
         placeholderTMPText.ForceMeshUpdate();
 
         foreach (var section in sections){
-            var sectionInstance = Instantiate(refs.sectionPrefab, refs.sectionContent.transform); //  adicionar optiondata pra cada opção *dependendo do tipo do parametro*
-            //section.GetComponent<OptionInfo>().tipo = sectionName; //onde vai ser decidido as seções de section
-            var sectionOptions = sectionInstance.GetComponent<SectionInfo>();
-            sectionOptions.label.text = section.ToString();
-            sectionOptions.label.ForceMeshUpdate();
-            sectionOptions.sectionCurrent = section;
-        
-            // tem que settar numa var do option info a seção de cada option(vai ter o enum da seção, e a lista dos valores(na hora de instanciar os valores, le os valores da lista num foreach, e adicionar somente um item na lista(que é o valor lido), e vai ter o mesmo enum da seção pra identificação))
-                // pra usar obter valores (no parameter config) atraves dos valores do option info
+            var sectionOptions = InitializeSection(section, refs.sectionContent.transform);
+
             foreach (var value in SectionValues[section]) {
                 sectionOptions.valueList.Add(value);
             }
         }
+
         refs.sectionContent.GetComponent<AdjustWidthByText>().AdjustWidth();// precisa?
+        
         if (CanInputInt) { 
-            var inputTextInstance = Instantiate(refs.inputTextPrefab, refs.childParamLayout.transform);
-            GetComponent<ParameterConfig>().SetInputText(inputTextInstance);
+            var inputText = Instantiate(refs.inputTextPrefab, refs.childParamLayout.transform);
+            refs.inputTextInstance = inputText;
         } 
     }
 

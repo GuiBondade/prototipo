@@ -13,15 +13,19 @@ public class ReferenceHolder : MonoBehaviour
 
     public GameObject inputTextPrefab;
 
+    public GameObject inputTextInstance;
+
     public GameObject placeholderLabel;
 
     public GameObject sectionContent;
 
     public GameObject sectionPrefab;
 
-    public GameObject leftOperand; //[HideInInspector]
+    public ParameterType type;
 
-    public GameObject rightOperand; //[HideInInspector]
+    public GameObject leftOperand; // INUTIL, agora que tem blocksFactory nem faz sentido mais guardar ref
+
+    public GameObject rightOperand; // INUTIL, agora que tem blocksFactory nem faz sentido mais guardar ref
 
     public GameObject selectionArea;
 

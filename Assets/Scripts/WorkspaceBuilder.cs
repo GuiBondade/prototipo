@@ -83,11 +83,14 @@ public class WorkspaceBuilder : MonoBehaviour
         string valor = selectedValue.GetComponent<ValueInfo>().value;
         if (valor == "Digitar Valor") valor = parameter.GetComponent<ParameterConfig>().inputText.GetComponent<TMP_InputField>().text;
         // if valor == *variavel*, como faz????
-        string typeParameter = "";
-        ParameterSetup parameterSetup; // pelo jeito precisa
-        if (parameter.TryGetComponent<ParameterSetup>(out parameterSetup)) { // parameter é refHolder, da certo?
-            typeParameter = parameterSetup.GetType().AssemblyQualifiedName; //antes tava: parameterSetup.type; 
-        }
+        ParameterType typeParameter = parameter.type;
+        /*
+            string typeParameter = "";
+            ParameterSetup parameterSetup; // pelo jeito precisa
+            if (parameter.TryGetComponent<ParameterSetup>(out parameterSetup)) { // parameter é refHolder, da certo?
+                typeParameter = parameterSetup.GetType().AssemblyQualifiedName; //antes tava: parameterSetup.type; 
+            }
+        */
 
         var paramNode = new ParameterNode {
             id = myId,
@@ -147,42 +150,10 @@ public class WorkspaceBuilder : MonoBehaviour
         return myId;
     }
 
-    public void WorkspaceBuildUI(SaveNodesData data) 
-    {
-        return;
-        // oq precisa pra recosntruir a partir do script salvo
-        /*
-        instanciar prefab certo, do block data, na workspace, ou no slot do bloco pai referenciado por id no script,
-            ja ta feito as referencias pros blocos seguintes e tals
-            e dai segue as funções do blockUI ou outro/novo script, que settam certinho o funcionamento e visualização dos blocos instanciados
-        instanciar os parametros certos, do block data, settando o valor referenciado em algum lugar, 
-            (talvez adicionar um Dictionary (classe sepa) no block ui, onde é adicionado chave nova pra cada parametro instanciado
-            inicialmente, e dai vai recursivamente olhando os value 1 e 2 e as operações, que são os param com value settado,
-            e dai tem que ter tambem uma relação dizendo o id do value relativo ao parametro que o referencia, pra poder instanciar
-            recursivamente depois (pra ir atras de outra ideia, sepa que IA ajuda))
-        
-        */
-
-        // na recriação basicamente vai: (iniciando a partir do nodes[-1])
-        // pegar block data
-        // instanciar 
-        // chamar setup de parametros
-            // esse é o foda, vai instanciar a partir do blockdata e dai ir recursivo pros values 1 e 2
-            // sepa que chama o parameter config no fim da função pra dar Instantiate parameter while ele tiver value 1 ou value 2 sei la
-            // da pra so criar uma função especifica pra isso dentro do rebuild e fodase tambem
-            //DECIDIDO: a parte da recursão sera feita fora de scripts proprios dos parametros, o setup vai ser o mesmo dos parametros, pra
-            // padronizar, e a instanciação de filhos, caso fique igual e sempre va ficar tanto na escolha de operação
-            // quanto na reconstrução dos parametros, entao so chama a função, se for trocar algo ou fazer algo diferente, cria uma nova, ou
-            // se tiver algo igual nas duas separa a origem em duas, uma reutilizavel nos dois casos, e a outra chama essa e faz o especifico desse caso
-        // chamar setup de UI
-        // pegar proximo bloco e bloco body (do node)
-        // ...repetir passos pro proximo bloco e body caso tiver
-    }
-
     public void BuildFromJson(SaveNodesData data) {
         /* if (string.IsNullOrEmpty(jsonText)) return;
 
-        // 1. Transforma o texto JSON em dados brutos na memória RAM
+        // Transforma o texto JSON em dados brutos na memória RAM
         SaveNodesData data = JsonUtility.FromJson<SaveNodesData>(jsonText); */
         
         if (data == null || data.blocosData == null) return;
@@ -234,13 +205,10 @@ public class WorkspaceBuilder : MonoBehaviour
 
         // olha oq faz no paletteItem e poe aqui sepa
 
-        var ui = blockInstance.GetComponent<BlockUI>();
-        ui.SetupUI(blockData);
-
         foreach (var rootParamId in blockNode.paramIds) { // todos os parametros primordiais
-            Debug.Log(rootParamId.GetType());
             var paramReference = InstantiateParameter(rootParamId, ui.TopSlot).GetComponent<ReferenceHolder>(); // tem que dar .transform no topslot?   
             ui.parameterInitialList.Add(paramReference);
+            //layout rebuilder no paramroot?
         }
 
         if (blockNode.next >= 0) { // faz sentido usar essa operação?
@@ -251,39 +219,20 @@ public class WorkspaceBuilder : MonoBehaviour
             var slotBodyRect = ui.slotBody.GetComponent<RectTransform>();
             InstantiateBlock(blockNode.body, slotBodyRect);
         }
-        
-        /* Debug.Log(ui.TopSlot.sizeDelta);
-        LayoutRebuilder.ForceRebuildLayoutImmediate(ui.TopSlot);
-        Debug.Log(ui.label.GetComponent<RectTransform>().sizeDelta);
-        Debug.Log(ui.TopSlot.GetChild(3).GetComponent<RectTransform>().sizeDelta); */
     }
 
     private GameObject InstantiateParameter(int paramId, RectTransform blockParent) { // DA PRA FAZER SER ACESSIVEL PELO PALLETE ITEM E DAI LA SER SO CHAMADA DE FUNÇÃO
-        var paramData = paramDadosArray[paramId]; 
+        var paramNode = paramDadosArray[paramId]; 
 
-        var paramInstance = blocksFactory.InitializeParameter(blockParent);
-        var paramComponent = paramInstance.AddComponent(Type.GetType(paramData.type)) as ParameterSetup; // as ParameterSetup; precisa??
-        var paramReference = paramInstance.GetComponent<ReferenceHolder>();
-        var paramRect = paramInstance.GetComponent<RectTransform>();
+        var paramReference = blocksFactory.InitializeParameter(paramNode.value, paramNode.type, blockParent);
 
-        paramComponent.Initialize(paramReference);
-
-        if (blockParent.GetComponent<ReferenceHolder>() == null) {
-            paramReference.rootParameter = paramInstance;
-        } else {
-            paramReference.rootParameter = blockParent.GetComponent<ReferenceHolder>().rootParameter;
-        }
-
+        var paramRect = paramReference.GetComponent<RectTransform>();
+        
         //tem que settar data do param aqui? (dava pra ter tipo um blockData, pra cada, sei la)
+        // tirar os operand do refholder, e criar um ParamData meio que pra isso (nao sei se precisa mesmo, ta de boa por enquanto)
         
-        if (paramData.leftOperandId >= 0) paramReference.leftOperand = InstantiateParameter(paramData.leftOperandId, paramRect);//arrumar algo?
-        if (paramData.rightOperandId >= 0) paramReference.rightOperand = InstantiateParameter(paramData.rightOperandId, paramRect);//arrumar algo?
-
-        paramComponent.Setup(paramData.value); // depois de instanciar todos os filhos?
-        
-        paramInstance.GetComponent<AdjustWidthByText>().AdjustWidth();
-
-        //layout rebuilder no paramroot?
+        if (paramNode.leftOperandId >= 0) paramReference.leftOperand = InstantiateParameter(paramNode.leftOperandId, paramRect);//arrumar algo?
+        if (paramNode.rightOperandId >= 0) paramReference.rightOperand = InstantiateParameter(paramNode.rightOperandId, paramRect);//arrumar algo?
 
         return paramInstance;
     }

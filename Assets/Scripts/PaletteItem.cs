@@ -43,31 +43,15 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         if (blockData.blockPrefab == null) return;
         BlockerManager.instancia.Reset();
 
-        draggingInstance = Instantiate(blockData.blockPrefab, canvasAreasManager.canvasProgramming); // por canvas Programming aqui (pega por tag sei la)
+        draggingInstance = blocksFactory.InitializeBlock(blockData, canvasAreasManager.canvasProgramming); 
         var ui = draggingInstance.GetComponent<BlockUI>();
         rect = draggingInstance.GetComponent<RectTransform>();
 
-        // parametros são setados antes da propria UI, ta certo?
-        /* RectTransform TopSlot = null;
-        if (draggingInstance.GetComponent<BlockUI>().slotBody == null) { // bloco next
-            TopSlot = draggingInstance.GetComponent<RectTransform>();
-        } else { // bloco body
-            TopSlot = draggingInstance.transform.Find("TopBody").GetComponent<RectTransform>();
-        } */
-        foreach (var parametro in blockData.listaParametros) {
-            var parametroInstanciado = Instantiate(ParameterPrefab, ui.TopSlot);
-            var paramComponent = parametroInstanciado.AddComponent(parametro.ScriptTypeParameter.GetClass()) as ParameterSetup; // trocar né, por switch sei la(ideia do prefabRefHolder?)
-            var paramReference = parametroInstanciado.GetComponent<ReferenceHolder>();
-            paramReference.rootParameter = parametroInstanciado;
-            paramComponent.Initialize(paramReference);
-            ui.parameterInitialList.Add(paramReference);
-            paramComponent.Setup(parametro.name);
-            parametroInstanciado.GetComponent<AdjustWidthByText>().AdjustWidth();
-        }
+        // parametros são setados antes da propria UI, ta certo? (nao deu erro ainda eu acho)
         
-        // Configurar o UI do bloco com os dados
-        if (ui != null && blockData != null) {
-            ui.SetupUI(blockData);
+        foreach (var parametro in blockData.listaParametros) {
+            var paramReference = blocksFactory.InitializeParameter(parametro.name, parametro.type, ui.TopSlot);
+            ui.parameterInitialList.Add(paramReference);
         }
 
         rect.anchorMin = new Vector2(0.5f, 0.5f);
