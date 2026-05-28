@@ -34,6 +34,7 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
 
         label = GetComponentInChildren<TMP_Text>(); // precisa? como é prefab acho que nao
         label.text = blockData.blockName;
+        label.ForceMeshUpdate();
 
         scrollWorkspace = canvasAreasManager.visibleWorkspace.GetComponent<ZoomScrollWorkspace>();
     }
@@ -55,13 +56,13 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         } */
         foreach (var parametro in blockData.listaParametros) {
             var parametroInstanciado = Instantiate(ParameterPrefab, ui.TopSlot);
-            var paramComponent = parametroInstanciado.AddComponent(parametro.ScriptTypeParameter.GetClass()) as ParameterSetup;
+            var paramComponent = parametroInstanciado.AddComponent(parametro.ScriptTypeParameter.GetClass()) as ParameterSetup; // trocar né, por switch sei la(ideia do prefabRefHolder?)
             var paramReference = parametroInstanciado.GetComponent<ReferenceHolder>();
+            paramReference.rootParameter = parametroInstanciado;
             paramComponent.Initialize(paramReference);
             ui.parameterInitialList.Add(paramReference);
             paramComponent.Setup(parametro.name);
             parametroInstanciado.GetComponent<AdjustWidthByText>().AdjustWidth();
-            // add component parameterSetup<T> a partir de referencia do BlockData
         }
         
         // Configurar o UI do bloco com os dados

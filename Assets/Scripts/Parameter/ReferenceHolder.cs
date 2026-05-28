@@ -1,9 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ReferenceHolder : MonoBehaviour
 {
+    [HideInInspector] public GameObject rootParameter;
+
+    public GameObject parentesesInstance;
+
     public GameObject childParamLayout;
 
     public GameObject inputTextPrefab;

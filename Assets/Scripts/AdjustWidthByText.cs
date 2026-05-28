@@ -9,6 +9,8 @@ public class AdjustWidthByText : MonoBehaviour
     [SerializeField] public GameObject fontWidthGO; // content e layout
     [SerializeField] public RectTransform targetRect;
 
+    private List<LayoutElement> listLabelLayout = new List<LayoutElement>();
+
     /* void Start() 
     {
         AdjustWidth();
@@ -18,35 +20,42 @@ public class AdjustWidthByText : MonoBehaviour
         if (fontWidthGO == null || targetRect == null) { //|| tmpText == null) {
             return;
         }
+        listLabelLayout.Clear();
         float biggestChildWidth = 0;
         for (int j = 0; j < fontWidthGO.transform.childCount; j++ ) {
             var child = fontWidthGO.transform.GetChild(j);
+            Debug.Log("Child: "+j);
             float childWidth = 0;
             for (int k = 0; k < child.transform.childCount; k++ ) {
                 var childElement = child.transform.GetChild(k); // checkmark e tmp text
                 var childText = childElement.GetComponent<TMP_Text>();
                 var childElementRect = childElement.GetComponent<RectTransform>();
                 if  (childText != null) {
+                    LayoutElement layout;
+                    if (childText.TryGetComponent<LayoutElement>(out layout)) listLabelLayout.Add(layout);    
+                    Debug.Log("layout: "+layout);                
                     childText.ForceMeshUpdate(); //precisa?
                     childWidth += childText.preferredWidth;    
-                } else {
-                    childWidth += childElementRect.rect.width;
                 }
                 LayoutRebuilder.ForceRebuildLayoutImmediate(childElementRect);
+                Debug.Log(" width " +k+ " child:"+childWidth);
             }
-            var childPadding = child.GetComponent<HorizontalLayoutGroup>().padding;
-            childWidth += childPadding.left + childPadding.right;
             if (biggestChildWidth < childWidth) biggestChildWidth = childWidth;
         }
-        for (int i = 0; i < fontWidthGO.transform.childCount; i++) {
-            var childRect = fontWidthGO.transform.GetChild(i).GetComponent<RectTransform>();
-            childRect.GetComponent<LayoutElement>().preferredWidth = biggestChildWidth;
-            LayoutRebuilder.ForceRebuildLayoutImmediate(childRect);
+        Debug.Log("Biggest child width text: "+biggestChildWidth);
+        foreach (LayoutElement layout in listLabelLayout) {
+            layout.preferredWidth = biggestChildWidth;
         }
+        var childPadding = fontWidthGO.transform.GetChild(0).GetComponent<HorizontalLayoutGroup>().padding;
+        biggestChildWidth += childPadding.left + childPadding.right;
         var fontWidthRect = fontWidthGO.GetComponent<RectTransform>();
+        Debug.Log("Biggest child width: "+biggestChildWidth);
         fontWidthRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,biggestChildWidth);
-        LayoutRebuilder.ForceRebuildLayoutImmediate(fontWidthRect);
+        var targetLayoutElem = targetRect.GetComponent<LayoutElement>();
+        if (targetLayoutElem != null) targetLayoutElem.preferredWidth = biggestChildWidth;
         targetRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,biggestChildWidth);
-        // targetRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, targetRect);
+        //LayoutRebuilder.ForceRebuildLayoutImmediate(ancestorRect.GetComponent<RectTransform>());
+        LayoutRebuilder.ForceRebuildLayoutImmediate(targetRect);
+        Debug.Log("Adjusted width");
     }
 }

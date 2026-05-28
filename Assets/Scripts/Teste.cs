@@ -6,10 +6,12 @@ public class Teste : MonoBehaviour // arquivo set/delete json
 {
     public WorkspaceBuilder builder;
 
+    SaveNodesData nodes;
+
     public void TestGraph() // save (set)
     {
         // salvo em: C:\Users\<seu_usuario>\AppData\LocalLow\<CompanyName>[DefaultCompany*]\<ProductName>\workspace.json
-        var nodes = builder.WorkspaceBuildGraph();
+        nodes = builder.WorkspaceBuildGraph();
         var json = JsonUtility.ToJson(nodes, true); // true = readability (tira quando salvar de verdade)
         var folder = Application.persistentDataPath;
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
@@ -22,7 +24,13 @@ public class Teste : MonoBehaviour // arquivo set/delete json
         }
         foreach (var b in nodes.blocosData) // le de tras pra frente, pois salva de tras pra frente
         {
-            Debug.Log($"Block {b.id} - {b.blockName} - {b.type} | Function: {b.function} | ParamIds: {string.Join(", ", b.paramIds)} | Next: {b.next} | Body: {b.body}");
+            Debug.Log($"Block {b.id} | BlockDataId {b.blockDataId} | ParamIds: {string.Join(", ", b.paramIds)} | Next: {b.next} | Body: {b.body}");
         }
+
+        builder.BuildFromJson(nodes); 
+        /* // 1. Transforma o texto JSON em dados brutos na memória RAM
+        SaveNodesData data = JsonUtility.FromJson<SaveNodesData>(jsonText); */
     }
+
+
 }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class ParameterNode 
 {
    public int id;
-   public ParameterType type; // acho que paramSetup funfa, por ser generic deve servir pra inherit dele
+   public string type; // acho que paramSetup funfa, por ser generic deve servir pra inherit dele
    public string value;
    public int leftOperandId;
    public int rightOperandId;

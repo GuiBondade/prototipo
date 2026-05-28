@@ -59,7 +59,7 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
         },
         {
             ParameterSections.IntValues,
-            new List<string> {"Digitar Valor"}
+            new List<string> {"Digitar..."}
         },
         {
             ParameterSections.IntOperations,
@@ -90,7 +90,9 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
     
     public virtual void Setup(string name) 
     {
-        refs.placeholderLabel.GetComponent<TMP_Text>().text = name;
+        var placeholderTMPText = refs.placeholderLabel.GetComponent<TMP_Text>();
+        placeholderTMPText.text = name;
+        placeholderTMPText.ForceMeshUpdate();
 
         foreach (var section in sections){
             var sectionInstance = Instantiate(refs.sectionPrefab, refs.sectionContent.transform); //  adicionar optiondata pra cada opção *dependendo do tipo do parametro*
@@ -106,7 +108,7 @@ public abstract class ParameterSetup : MonoBehaviour//, IIdentificadorScript
                 sectionOptions.valueList.Add(value);
             }
         }
-        refs.sectionContent.GetComponent<AdjustWidthByText>().AdjustWidth();
+        refs.sectionContent.GetComponent<AdjustWidthByText>().AdjustWidth();// precisa?
         if (CanInputInt) { 
             var inputTextInstance = Instantiate(refs.inputTextPrefab, refs.childParamLayout.transform);
             GetComponent<ParameterConfig>().SetInputText(inputTextInstance);

@@ -33,8 +33,7 @@ public class ParameterConfig : MonoBehaviour
         // da pra subtituir sectionPressed por this?
         if (sectionPressed != refs.selectedSection) {
             var sectionPressedInfo = sectionPressed.GetComponent<SectionInfo>();
-            UpdateValues(sectionPressedInfo);
-            refs.valueContent.GetComponent<AdjustWidthByText>().AdjustWidth();
+            StartCoroutine(UpdateValuesAfterDestruction(sectionPressedInfo));
             UpdateSelectedOption(sectionPressed);
         }
     }
@@ -44,8 +43,9 @@ public class ParameterConfig : MonoBehaviour
             var valuePressedInfo = valuePressed.GetComponent<ValueInfo>(); //value info
             // refs.placeholderLabel vai ser o valor final(por enquanto), depois vai ter somente valor equivalente ao atribuido ao valor final
             // atribuir valor no setup/config para leitura pratica no save
-            refs.placeholderLabel.GetComponent<TMP_Text>().text = valuePressedInfo.label.text;
-            GetComponent<AdjustWidthByText>().AdjustWidth();
+            var placeholderTMPText = refs.placeholderLabel.GetComponent<TMP_Text>();
+            placeholderTMPText.text = valuePressedInfo.label.text;
+            placeholderTMPText.ForceMeshUpdate();
 
             if (valuePressedInfo.sectionCurrent != sectionSelected) {
                 ResetParameterState();
@@ -59,20 +59,26 @@ public class ParameterConfig : MonoBehaviour
                         if (valuePressedInfo.value == GetComponent<ParameterSetup>().GetIntValueAt(0)) inputText.SetActive(true);
                         break; // ativar InputInt GO caso seja o valor pressionado(index 0)
                     case ParameterSections.BoolLogicOperations:
+                        refs.parentesesInstance.SetActive(true);
                         InstantiateParameter<BooleanParameter>(ref refs.leftOperand, true, "Boolean");
                         InstantiateParameter<BooleanParameter>(ref refs.rightOperand, false, "Boolean");
-                        LayoutRebuilder.ForceRebuildLayoutImmediate(GetComponent<RectTransform>());
+                        refs.parentesesInstance.GetComponent<RectTransform>().SetAsFirstSibling();
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(refs.rootParameter.GetComponent<RectTransform>());
                         break; // adicionar dois prefab boolean (como first e last) (irmaos de genericParameter)
                     case ParameterSections.BoolAllComparisonOperations:
+                        refs.parentesesInstance.SetActive(true);
                         InstantiateParameter<AllTypeParameter>(ref refs.leftOperand, true, "All Types");
                         InstantiateParameter<AllTypeParameter>(ref refs.rightOperand, false, "All Types");
-                        LayoutRebuilder.ForceRebuildLayoutImmediate(GetComponent<RectTransform>());
+                        refs.parentesesInstance.GetComponent<RectTransform>().SetAsFirstSibling();
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(refs.rootParameter.GetComponent<RectTransform>());
                         break; // adicionar dois prefab com todas as seções (como first e last) (irmaos de genericParameter)
                     case ParameterSections.IntOperations: // adicionar dois prefabs param int (como first e last) (irmaos de genericParameter)
                     case ParameterSections.BoolIntComparisonOperations:
+                        refs.parentesesInstance.SetActive(true);
                         InstantiateParameter<IntParameter>(ref refs.leftOperand, true, "Int");
                         InstantiateParameter<IntParameter>(ref refs.rightOperand, false, "Int");
-                        LayoutRebuilder.ForceRebuildLayoutImmediate(GetComponent<RectTransform>());
+                        refs.parentesesInstance.transform.SetAsFirstSibling();
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(refs.rootParameter.GetComponent<RectTransform>());
                         break; // adicionar dois prefabs param int, um como first e outro como last (irmaos de genericParameter)
                     default:
                         Debug.Log("Deu erro ao pressionar valor, parece que tem opção de seção a mais no Setup(ParameterSections) do que no Config(ValuePressionado");
@@ -89,6 +95,8 @@ public class ParameterConfig : MonoBehaviour
                 atual = atual.parent; // Sobe um nível
             }
 
+            GetComponent<AdjustWidthByText>().AdjustWidth();
+
             sectionSelected = valuePressedInfo.GetComponent<ValueInfo>().sectionCurrent;
             UpdateSelectedOption(valuePressed);
         }
@@ -101,12 +109,15 @@ public class ParameterConfig : MonoBehaviour
         if (isFirst) instanceReference.transform.SetAsFirstSibling();
         else instanceReference.transform.SetAsLastSibling();
 
-        T parameterComponent = instanceReference.AddComponent<T>(); // nao ta dando certo
-        parameterComponent.Initialize(instanceReference.GetComponent<ReferenceHolder>());
+        T parameterComponent = instanceReference.AddComponent<T>(); // nao ta dando certo (nao ta? testa plz)
+        var parameterReferences = instanceReference.GetComponent<ReferenceHolder>();
+        parameterComponent.Initialize(parameterReferences);
+        parameterReferences.rootParameter = refs.rootParameter;
         parameterComponent.Setup(label);
         instanceReference.GetComponent<AdjustWidthByText>().AdjustWidth();
         LayoutRebuilder.ForceRebuildLayoutImmediate(instanceReference.GetComponent<RectTransform>());
     }
+
 
     public void UpdateSelectedOption(GameObject optionPressed) { // tem que ALTERAR porque ta so funfando pra section
         var pressedOptionInfo = optionPressed.GetComponent<OptionInfo>();
@@ -125,29 +136,37 @@ public class ParameterConfig : MonoBehaviour
     }
 
     public void UpdateValues(SectionInfo sectionInfo) { //operations / values
-        for (int i = refs.valueContent.transform.childCount - 1; i >= 0; i--)
-        {
-            Destroy(refs.valueContent.transform.GetChild(i).gameObject);
-        }
         foreach (var valor in sectionInfo.valueList) { // o values pode ser uma referencia pra seção do tipo de dado do parametro, do scriptable object inherit, ve com gemini como fazer isso funfar
             var item = Instantiate(refs.valuePrefab, refs.valueContent.transform);
             var valueInfo = item.GetComponent<ValueInfo>(); 
             valueInfo.label.text = valor;
-            valueInfo.label.ForceMeshUpdate(); // precisa?
+            valueInfo.label.ForceMeshUpdate();
             valueInfo.sectionCurrent = sectionInfo.sectionCurrent;
             valueInfo.value = valor;
         }
+        refs.valueContent.GetComponent<AdjustWidthByText>().AdjustWidth();
+    }
+
+    private IEnumerator UpdateValuesAfterDestruction(SectionInfo sectionInfo) {
+        for (int i = refs.valueContent.transform.childCount - 1; i >= 0; i--)
+        {
+            var value = refs.valueContent.transform.GetChild(i);
+            value.SetParent(null);
+            Destroy(value.gameObject);
+        }
+        yield return new WaitForEndOfFrame();
+        UpdateValues(sectionInfo);
     }
 
      public void ResetParameterState() { //sepa que é melhor por reset state
         if (inputText != null) inputText.SetActive(false);
+        refs.parentesesInstance.SetActive(false);
         if (refs.leftOperand != null){
              Destroy(refs.leftOperand);
              refs.leftOperand = null;
         }
         if (refs.rightOperand != null){
              Destroy(refs.rightOperand);
-             Debug.Log("rightOperand apos destruição" + refs.rightOperand);
              refs.rightOperand = null;
         }
     }

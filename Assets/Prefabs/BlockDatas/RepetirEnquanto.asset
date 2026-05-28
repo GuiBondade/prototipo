@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 182b4c78af87056448953178db4fdeb7, type: 3}
   m_Name: RepetirEnquanto
   m_EditorClassIdentifier: 
+  id: repetir_enquanto
   blockName: Repetir Enquanto
   function: 0
   color: {r: 0, g: 0.9169811, b: 0.11357717, a: 1}
   blockPrefab: {fileID: 4921128051467867969, guid: 2824b71f63d07ec4da942216eeb0c5c9, type: 3}
-  type: 0
+  prefab: 1
   listaParametros:
   - name: "Repeti\xE7\xF5es"
     ScriptTypeParameter: {fileID: 11500000, guid: 0b5ec1319b191d943b75a1f16dd5b461, type: 3}

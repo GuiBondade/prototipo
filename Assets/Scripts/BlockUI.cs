@@ -26,18 +26,25 @@ public class BlockUI : MonoBehaviour
     public void SetupUI(BlockData newData) {
         data = newData;
 
-        if (label != null) label.text = newData.blockName;
+        if (label != null) {
+            label.text = newData.blockName;
+            label.ForceMeshUpdate();
+            //LayoutRebuilder.ForceRebuildLayoutImmediate(label.GetComponent<RectTransform>());
+        }
         if (background != null) background.color = newData.color;
         if (backgroundSecondary != null){
             backgroundSecondary.color = newData.color;
             bodySpacer.GetComponent<Image>().color = newData.color;
         }
+        /* Debug.Log(TopSlot.sizeDelta);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(TopSlot);
+        Debug.Log(TopSlot.sizeDelta); */
     }
 
 // ------------ Acessores ------------
 
     // Retorna referência ao próximo bloco no slotNext ou slotBody
-    public BlockUI GetNext() { // SLOT NEXT VAI TER MAIS DE UM FILHO?
+    public BlockUI GetNext() { // SLOT NEXT VAI TER MAIS DE UM FILHO? [na teoria nao vai ter, e daria pra tirar o loop]
         if (slotNext == null) return null;
 
         // iterar de baixo pra cima dentre os filhos de slotNext
@@ -49,7 +56,7 @@ public class BlockUI : MonoBehaviour
         return null;
     }
 
-    public BlockUI GetBody() { // SLOT NEXT VAI TER MAIS DE UM FILHO?
+    public BlockUI GetBody() { // SLOT BODY VAI TER MAIS DE UM FILHO? [na teoria nao vai ter, e daria pra tirar o loop]
         if (slotBody == null) return null;
 
         // iterar de baixo pra cima dentre os filhos de slotBody
