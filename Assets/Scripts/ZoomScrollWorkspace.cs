@@ -45,7 +45,7 @@ public class ZoomScrollWorkspace : MonoBehaviour, IScrollHandler
             {
                 isDragging = true;
                 lastMousePosition = Input.mousePosition;
-                if (BlockerManager.instancia != null) BlockerManager.instancia.Reset();
+                //if (BlockerManager.instancia != null) BlockerManager.instancia.Reset();
             }
         }
 
@@ -70,7 +70,7 @@ public class ZoomScrollWorkspace : MonoBehaviour, IScrollHandler
     {
         if (conteudoTransform == null) return;
 
-        if (BlockerManager.instancia != null) BlockerManager.instancia.Reset();
+        //if (BlockerManager.instancia != null) BlockerManager.instancia.Reset();
 
         Vector3 currentScale = conteudoTransform.localScale;
         float zoomFactor = eventData.scrollDelta.y * zoomSpeed;

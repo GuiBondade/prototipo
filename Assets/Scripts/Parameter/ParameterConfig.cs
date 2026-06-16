@@ -8,14 +8,9 @@ public class ParameterConfig : MonoBehaviour
 {
     public ReferenceHolder refs;
 
-    [HideInInspector] public GameObject ParameterPrefab;
-    
-    [HideInInspector] public ParameterSections sectionSelected;
-
     private BlockerManager blocker;
 
     public void Start() {
-        ParameterPrefab = Resources.Load<GameObject>("GenericParameter");
         blocker = BlockerManager.instancia;
     }
 
@@ -23,28 +18,32 @@ public class ParameterConfig : MonoBehaviour
         blocker.SetUIOnBlocker(refs.selectionArea);
     }
 
-    public void SectionPressionado(GameObject sectionPressed) { 
+    public void SectionPressionado(SectionInfo sectionPressed) { 
         // da pra subtituir sectionPressed por this?
-        if (sectionPressed != refs.selectedSection) {
-            var sectionPressedInfo = sectionPressed.GetComponent<SectionInfo>();
-            UpdateValues(sectionPressedInfo);
-            UpdateSelectedOption(sectionPressed);
+        if (sectionPressed != refs.selectedSection) { // se mudou o section selecionado
+            UpdateValues(sectionPressed);
+            UpdateSelectedSection(sectionPressed);
+            if (refs.selectedValueVisual != null) {
+                if (sectionPressed.sectionCurrent == refs.selectedValueSection) {
+                    refs.selectedValueVisual.checkmark.enabled = true;
+                } else {
+                    refs.selectedValueVisual.checkmark.enabled = false;
+                }
+            }
         }
     }
 
-    public void ValuePressionado(GameObject valuePressed) {
-        if (valuePressed != refs.selectedValue) { 
-            var valuePressedInfo = valuePressed.GetComponent<ValueInfo>(); //value info
+    public void ValuePressionado(ValueInfo valuePressed) {
+        if (refs.selectedValueKey == null || valuePressed.value != refs.selectedValueKey) { 
             // refs.placeholderLabel vai ser o valor final(por enquanto), depois vai ter somente valor equivalente ao atribuido ao valor final
             // atribuir valor no setup/config para leitura pratica no save
-            var placeholderTMPText = refs.placeholderLabel.GetComponent<TMP_Text>();
-            placeholderTMPText.text = valuePressedInfo.label.text;
-            placeholderTMPText.ForceMeshUpdate();
-
-            if (valuePressedInfo.sectionCurrent != sectionSelected) {
+            string valueText = valuePressed.label.text;
+            refs.placeholderLabel.text = valueText; 
+            refs.placeholderLabel.ForceMeshUpdate();
+            if (valuePressed.sectionCurrent != refs.selectedValueSection) {
+                // trocou de seção
                 ResetParameterState();
-
-                switch (valuePressedInfo.sectionCurrent) {
+                switch (valuePressed.sectionCurrent) {
                     case ParameterSections.BoolValues:
                     case ParameterSections.DirectionValues:
                     case ParameterSections.MaterialValues:
@@ -77,8 +76,10 @@ public class ParameterConfig : MonoBehaviour
                         break;
                 } 
             } 
-            if (valuePressedInfo.sectionCurrent == ParameterSections.IntValues) {
-                if (valuePressedInfo.value == GetComponent<ParameterSetup>().GetIntValueAt(0)) refs.inputText.SetActive(true);
+            if (refs.variableManager.variables.ContainsKey(valueText)) {
+                refs.selectedVariableName = valueText;
+            } else if (valuePressed.sectionCurrent == ParameterSections.IntValues) {
+                if (valuePressed.value == GetComponent<ParameterSetup>().GetValueAt(ParameterSections.IntValues, 0)) refs.inputTextInstance.SetActive(true);
             }
             Transform atual = transform.parent; // Começa do pai direto
             while (atual != null) {
@@ -90,53 +91,85 @@ public class ParameterConfig : MonoBehaviour
 
             GetComponent<AdjustWidthByText>().AdjustWidth();
 
-            sectionSelected = valuePressedInfo.GetComponent<ValueInfo>().sectionCurrent;
-            UpdateSelectedOption(valuePressed);
+            UpdateSelectedValue(valuePressed);
         }
         blocker.Reset();
     }
 
-    public void InstantiateParameter(ref GameObject instanceReference, ParameterType type, bool isFirst, string label) where T : ParameterSetup
+    public void InstantiateParameter(ref ReferenceHolder instanceReference, ParameterType type, bool isFirst, string label)
     {
-        // vai ser substituido pelo blocksFatory né? nao sei nao, usa o instanceReference no workspace builder (da pra tentar melhorar)
-        instanceReference = blocksFactory.InitializeParameter(label, type, transform).gameObject;
-        if (isFirst) instanceReference.transform.SetAsFirstSibling();
-        else instanceReference.transform.SetAsLastSibling();
+        var parameterRefs = refs.blocksFactory.InitializeParameter(label, type, transform);
+        instanceReference = parameterRefs;
+        if (isFirst) parameterRefs.transform.SetAsFirstSibling();
+        else parameterRefs.transform.SetAsLastSibling();
 
-        LayoutRebuilder.ForceRebuildLayoutImmediate(instanceReference.GetComponent<RectTransform>()); //precisa?
+        LayoutRebuilder.ForceRebuildLayoutImmediate(parameterRefs.GetComponent<RectTransform>()); //precisa?
     }
 
 
-    public void UpdateSelectedOption(GameObject optionPressed) { // tem que ALTERAR porque ta so funfando pra section(?, nao sei mais)
-        var pressedOptionInfo = optionPressed.GetComponent<OptionInfo>();
-        GameObject preSelectedOption = null;
-        if (pressedOptionInfo is SectionInfo) {
-            preSelectedOption = refs.selectedSection;
-            refs.selectedSection = optionPressed;
-        }
-        else if (pressedOptionInfo is ValueInfo) {
-            preSelectedOption = refs.selectedValue;
-            refs.selectedValue = optionPressed;
-        }
+    public void UpdateSelectedSection(SectionInfo sectionPressed) { // tem que ALTERAR porque ta so funfando pra section(?, nao sei mais)
+        if (refs.selectedSection != null) refs.selectedSection.checkmark.enabled = false;
+        refs.selectedSection = sectionPressed;
+        sectionPressed.checkmark.enabled = true;
+    }
 
-        if (preSelectedOption != null) preSelectedOption.GetComponent<OptionInfo>().checkmark.GetComponent<Image>().enabled = false;
-        optionPressed.GetComponent<OptionInfo>().checkmark.GetComponent<Image>().enabled = true;
+    public void UpdateSelectedValue(ValueInfo valuePressed) { 
+        if (refs.selectedValueVisual != null) refs.selectedValueVisual.checkmark.enabled = false;
+        refs.selectedValueVisual = valuePressed;
+        refs.selectedValueKey = valuePressed.value;
+        refs.selectedValueSection = valuePressed.sectionCurrent;
+        valuePressed.checkmark.enabled = true;
     }
 
     public void UpdateValues(SectionInfo sectionInfo) { //operations / values
         for (int i = refs.valueContent.transform.childCount - 1; i >= 0; i--)
         {
             var value = refs.valueContent.transform.GetChild(i);
-            blocksFactory.CleanUpValue(value);
+            var valueInfo = value.GetComponent<ValueInfo>();
+            refs.blocksFactory.CleanUpValue(valueInfo);
         }
-        
-        foreach (var valor in sectionInfo.valueList) {
-            var item = blocksFactory.InitializeValue(valor, refs.valueContent.transform);
+        var section = sectionInfo.sectionCurrent;
+        foreach (string valor in sectionInfo.valueList) {
+            refs.blocksFactory.InitializeValue(valor, section, refs.valueContent.transform);
+        }
+        var variablesNames = refs.variableManager.GetVarNamesBySection(section);
+        /* Debug.Log(refs.createdVar); // NÃO PRECISA MAIS EU ACHO, já que não tem mais problema setar VarX como VarX (já que o valor inicial vai ser setado na criação, a partir do section database somente, sem variáveis)
+        variablesNames.Remove(refs.createdVar);  */
+        // setar no escolher index 0 no varNameDropdown, passando pros operandos
+        // impede uma variavel setar o valor como si mesma na criação
+
+        // se setou index > 0 (ta setando valor de var) deve...
+
+
+        foreach (string variable in variablesNames) {
+            refs.blocksFactory.InitializeValue(variable, section, refs.valueContent.transform);
         }
         refs.valueContent.GetComponent<AdjustWidthByText>().AdjustWidth();
     }
 
-     public void ResetParameterState() { // chamar cleanup no blocksFactory
-        blocksFactory.CleanUpParameter();
+    public void ResetValues() {
+        Debug.Log(refs.selectedSection);
+        if (refs.selectedSection is SectionInfo section) UpdateValues(section);
+    }
+
+    public void ResetParameterState() { // chamar cleanup no refs.blocksFactory
+        if (refs.inputTextInstance != null) refs.inputTextInstance.SetActive(false);
+        refs.parentesesInstance.SetActive(false);
+
+        refs.selectedSection.checkmark.enabled = false;
+        if (refs.selectedValueVisual != null) refs.selectedValueVisual.checkmark.enabled = false;
+
+        refs.selectedSection = null;
+        refs.selectedValueVisual = null;
+        refs.selectedValueKey = null;
+
+        if (refs.leftOperand != null) {
+            refs.blocksFactory.CleanUpParameter(refs.leftOperand);
+            refs.leftOperand = null;
+        }
+        if (refs.rightOperand != null) {
+            refs.blocksFactory.CleanUpParameter(refs.rightOperand);
+            refs.rightOperand = null;
+        }
     }
 }

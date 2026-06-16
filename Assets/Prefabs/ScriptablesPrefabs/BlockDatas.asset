@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: BlockDatas
   m_EditorClassIdentifier: 
   listDatas:
-  - data: {fileID: 11400000, guid: f45bf6b53cff6ed44891d8bc725e9e77, type: 2}
-  - data: {fileID: 11400000, guid: f3ec229b8b308aa418bc1b5c5eb9c047, type: 2}
-  - data: {fileID: 11400000, guid: 0d4c54c43d6ec1f41ac7d088edfdb271, type: 2}
-  - data: {fileID: 11400000, guid: afe5f8a73dec45448bd08323e3e2eefe, type: 2}
+  - {fileID: 11400000, guid: f45bf6b53cff6ed44891d8bc725e9e77, type: 2}
+  - {fileID: 11400000, guid: f3ec229b8b308aa418bc1b5c5eb9c047, type: 2}
+  - {fileID: 11400000, guid: 0d4c54c43d6ec1f41ac7d088edfdb271, type: 2}
+  - {fileID: 11400000, guid: afe5f8a73dec45448bd08323e3e2eefe, type: 2}
+  - {fileID: 11400000, guid: 28c573e1e2f17314b93046a15a0344cd, type: 2}
+  - {fileID: 11400000, guid: 79af4ee5be3ca974ca792e5f61bf68bc, type: 2}

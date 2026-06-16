@@ -90,6 +90,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52eba3fec5941c346a5c41eeb53cd968, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  parentBlock: {fileID: 4921128051467867996}
   slotType: 0
   currentBlock: {fileID: 0}
 --- !u!114 &4090334256268019522
@@ -222,6 +223,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52eba3fec5941c346a5c41eeb53cd968, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  parentBlock: {fileID: 4921128051467867996}
   slotType: 1
   currentBlock: {fileID: 0}
 --- !u!1 &2090394158355912025
@@ -572,7 +574,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blockUI: {fileID: 0}
-  dragHeightCache: 0
 --- !u!114 &4921128051467867996
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -597,6 +598,7 @@ MonoBehaviour:
   bodyAncestors: []
   parentBodyOwner: {fileID: 0}
   defaultSpacerHeight: 30
+  defaultSpacerWidth: 30
 --- !u!114 &7063513936151148144
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -4,51 +4,38 @@ using UnityEngine;
 
 public class BlockRegistry : MonoBehaviour
 {
-    // Singleton instanciado de antemão que referencia os prefab assets
-    // POR NA CENA INICIAL, É PRA ESTAR SEMPRE CARREGADO (da pra alterar isso futuramente se quiser)
-    public static BlockRegistry instancia { get; private set; }
-
-    /* [SerializeField] private BlockPrefabs prefabs;  */
-    [SerializeField] private BlockDatas datas; 
+    [SerializeField] private BlockDatas blockDatas; 
+    [SerializeField] private ParamDatas paramDatas; 
 
     void Awake() {
-        if (instancia != null && instancia != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        instancia = this;
-        DontDestroyOnLoad(gameObject);
-
         // Inicializa o dicionário uma única vez no início do jogo
-        /* if (prefabs != null)
+        if (paramDatas != null)
         {
-            prefabs.Initialize();
-        } */
-        if (datas != null)
+            paramDatas.Initialize();
+        }
+        if (blockDatas != null)
         {
-            datas.Initialize();
+            blockDatas.Initialize();
         }
     }
 
-    /* public GameObject GetBlockPrefab(string id)
+    public ParamData GetParamData(ParameterType type)
     {
-        if (prefabs == null)
+        if (paramDatas == null)
         {
-            Debug.LogError("BlockPrefabs não configurado no BlockRegistry!");
+            Debug.LogError("ParamDatas não configurado no BlockRegistry!");
             return null;
         }
-        return prefabs.GetPrefab(id);
-    } */
+        return paramDatas.GetData(type);
+    }
 
     public BlockData GetBlockData(string id)
     {
-        if (datas == null)
+        if (blockDatas == null)
         {
             Debug.LogError("BlockDatas não configurado no BlockRegistry!");
             return null;
         }
-        return datas.GetData(id);
+        return blockDatas.GetData(id);
     }
 }

@@ -34,6 +34,7 @@ public class BlockerManager : MonoBehaviour
         Reset();
         UIEmFoco = UI;
         UIEmFoco.SetActive(true);
+        UIEmFoco.GetComponentInParent<ParameterConfig>().ResetValues();
         gameObject.GetComponent<Image>().raycastTarget = true;
         
         /* // Redimensiona para o tamanho do avô uma única vez ao abrir, to vendo de so ativar o reset quando acessar qualquer UI

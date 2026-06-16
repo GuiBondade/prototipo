@@ -22,50 +22,36 @@ public class BlockUI : MonoBehaviour
 
     [Header("Configurações")]
     public float defaultSpacerHeight = 30f;
+    public float defaultSpacerWidth = 30f;
 
-    public void SetupUI(BlockData newData) {
+    public virtual void SetupUI(BlockData newData) {
         data = newData;
 
         if (label != null) {
             label.text = newData.blockName;
             label.ForceMeshUpdate();
-            //LayoutRebuilder.ForceRebuildLayoutImmediate(label.GetComponent<RectTransform>());
         }
         if (background != null) background.color = newData.color;
         if (backgroundSecondary != null){
             backgroundSecondary.color = newData.color;
             bodySpacer.GetComponent<Image>().color = newData.color;
         }
-        /* Debug.Log(TopSlot.sizeDelta);
-        LayoutRebuilder.ForceRebuildLayoutImmediate(TopSlot);
-        Debug.Log(TopSlot.sizeDelta); */
     }
 
 // ------------ Acessores ------------
 
     // Retorna referência ao próximo bloco no slotNext ou slotBody
     public BlockUI GetNext() { // SLOT NEXT VAI TER MAIS DE UM FILHO? [na teoria nao vai ter, e daria pra tirar o loop]
-        if (slotNext == null) return null;
-
-        // iterar de baixo pra cima dentre os filhos de slotNext
-        for (int i = slotNext.transform.childCount - 1; i >= 0; i--) {
-            BlockUI block = slotNext.transform.GetChild(i).GetComponent<BlockUI>();
-            if (block != null) return block;
-        }
-
-        return null;
+        if (slotNext == null || slotNext.currentBlock == null) return null;
+        else {
+            Debug.Log(slotNext.currentBlock);
+            return slotNext.currentBlock;
+        } 
     }
 
     public BlockUI GetBody() { // SLOT BODY VAI TER MAIS DE UM FILHO? [na teoria nao vai ter, e daria pra tirar o loop]
-        if (slotBody == null) return null;
-
-        // iterar de baixo pra cima dentre os filhos de slotBody
-        for (int i = slotBody.transform.childCount - 1; i >= 0; i--) {
-            BlockUI block = slotBody.transform.GetChild(i).GetComponent<BlockUI>();
-            if (block != null) return block;
-        }
-
-        return null;
+        if (slotBody == null || slotBody.currentBlock == null) return null;
+        else return slotBody.currentBlock;
     }
 
     // pega o ultimo bloco da linha
@@ -123,11 +109,6 @@ public class BlockUI : MonoBehaviour
         var bodyChild = GetBody();
         if (bodyChild != null)
         {
-            //var newAnc = new List<BlockUI>(this.bodyAncestors);
-            //Debug.Log("Assigning body ancestors: " + newAnc.Count + " with new parentBodyOwner: " + this);
-            // se este bloco tem slotBody, ele passa a ser ancestor para filhos do body
-            //if (this.slotBody != null)
-            //    newAnc.Add(this);
             bodyChild.AssignBodyAncestorsRecursive(this.bodyAncestors, this);
         }
     }

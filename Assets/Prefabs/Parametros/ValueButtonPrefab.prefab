@@ -393,9 +393,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   label: {fileID: 4117418916661158041}
-  checkmark: {fileID: 368306897937598966}
+  checkmark: {fileID: 8171600864973818630}
+  btn: {fileID: 7165234235109460991}
   sectionCurrent: 0
   value: 
+  varName: 
 --- !u!114 &4103435606160794003
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,21 +1,22 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System.Collections.Generic;
 using TMPro;
 
 public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    private CanvasAreasManager canvasAreasManager;
+    protected CanvasAreasManager canvasAreasManager;
+
+    public BlocksFactory blocksFactory;
 
     public BlockData blockData;
 
     public TMP_Text label;
 
-    [HideInInspector]public GameObject ParameterPrefab;
+    private BlockUI ui;
 
-    private GameObject draggingInstance;
-
-    private RectTransform rect;
+    protected RectTransform rect;
     
     private ZoomScrollWorkspace scrollWorkspace;
 
@@ -28,11 +29,8 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
 
     void Start()
     {
-        ParameterPrefab = Resources.Load<GameObject>("GenericParameter");
-
         canvasAreasManager = CanvasAreasManager.instancia;
 
-        label = GetComponentInChildren<TMP_Text>(); // precisa? como é prefab acho que nao
         label.text = blockData.blockName;
         label.ForceMeshUpdate();
 
@@ -40,19 +38,10 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
     }
 
     public void OnBeginDrag(PointerEventData eventData) {
-        if (blockData.blockPrefab == null) return;
+        if (blockData == null) return;
         BlockerManager.instancia.Reset();
 
-        draggingInstance = blocksFactory.InitializeBlock(blockData, canvasAreasManager.canvasProgramming); 
-        var ui = draggingInstance.GetComponent<BlockUI>();
-        rect = draggingInstance.GetComponent<RectTransform>();
-
-        // parametros são setados antes da propria UI, ta certo? (nao deu erro ainda eu acho)
-        
-        foreach (var parametro in blockData.listaParametros) {
-            var paramReference = blocksFactory.InitializeParameter(parametro.name, parametro.type, ui.TopSlot);
-            ui.parameterInitialList.Add(paramReference);
-        }
+        SetupBlockData();
 
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -63,57 +52,58 @@ public class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
 
         rect.position = GetMouseScreenPosition();
         rect.localScale = canvasAreasManager.contentWorkspace.localScale;
-        scrollWorkspace.blockInDrag = rect; // altera bloco a ter scale alterado com scroll
+        scrollWorkspace.blockInDrag = rect; // altera ref do bloco a ter scale alterado com scroll
 
-        // eu real nem sei se faz sentido esse canvas group (acho que funciona enquanto to fazendo drag do bloco, dai é util mesmo)
-        var cg = draggingInstance.GetComponent<CanvasGroup>();
-        if (cg == null) cg = draggingInstance.AddComponent<CanvasGroup>();
+        var cg = rect.GetComponent<CanvasGroup>();
+        if (cg == null) cg = rect.gameObject.AddComponent<CanvasGroup>();
         cg.blocksRaycasts = false; // Permitir que o drag atravesse raycasts
     } 
 
     public void OnDrag (PointerEventData eventData) {
-        if (draggingInstance == null) return;
+        if (rect == null) return;
         rect.position = GetMouseScreenPosition();
     }
 
     public void OnEndDrag(PointerEventData eventData) {
-        if (draggingInstance == null) return;
-
-        // Finaliza drag: permitir que o objeto receba raycasts e possa ser movido depois
-        var cg = draggingInstance.GetComponent<CanvasGroup>();
-        if (cg) cg.blocksRaycasts = true;
+        if (rect == null) return;
 
         scrollWorkspace.blockInDrag = null;
 
-        // Se liberou fora da workspace, descarta; caso contrário mantém
-        if (!RectTransformUtility.RectangleContainsScreenPoint(canvasAreasManager.visibleWorkspace, eventData.position, eventData.pressEventCamera)) {
-            Destroy(draggingInstance);
-        }
-        else {
-            // Por padrão, coloca como filho do workspace
-            draggingInstance.transform.SetParent(canvasAreasManager.contentWorkspace, true);
+        HandleBlockDrop(eventData);
 
-            // Se estiver sobre um BlockSlot, coloca como filho dele
-            if (eventData.pointerEnter != null)
-            {
-                BlockSlot slot = eventData.pointerEnter.GetComponentInParent<BlockSlot>();
-                if (slot != null)
-                {
-                    // Seta o drag height cache no DraggableBlock
-                    var draggable = draggingInstance.GetComponent<DraggableBlock>();
-                    if (draggable != null)
-                    {
-                        var myRect = GetComponent<RectTransform>();
-                        draggable.dragHeightCache = draggable.blockUI.GetTailHeight();
-                    }
-                    // Simula que o bloco instanciado está sendo arrastado sobre o slot
-                    PointerEventData fakeEvent = new PointerEventData(EventSystem.current);
-                    fakeEvent.pointerDrag = draggingInstance;
-                    slot.OnDrop(fakeEvent);
-                }
-            }
-        }
-        draggingInstance = null;
+        // Finaliza drag: permitir que o objeto receba raycasts e possa ser movido depois
+        var cg = rect.GetComponent<CanvasGroup>();
+        if (cg) cg.blocksRaycasts = true;
+
     }
 
+    protected virtual void SetupBlockData() {
+        ui = blocksFactory.InitializeBlock(blockData, false, canvasAreasManager.canvasProgramming);
+        rect = ui.GetComponent<RectTransform>();
+        foreach (var parametro in blockData.listaParametros) {
+            var paramReference = blocksFactory.InitializeParameter(null, parametro, ui.TopSlot);
+            ui.parameterInitialList.Add(paramReference);
+        }
+    }
+
+    protected virtual void HandleBlockDrop(PointerEventData eventData) {
+        // Se liberou fora da workspace, descarta; caso contrário mantém
+        if (!RectTransformUtility.RectangleContainsScreenPoint(canvasAreasManager.visibleWorkspace, eventData.position, eventData.pressEventCamera)) {
+            blocksFactory.CleanUpBlock(ui);
+        }
+        else {
+            // Se estiver sobre um BlockSlot, coloca como filho dele
+            var placeDropped = eventData.pointerEnter?.transform;
+            if (placeDropped != null && placeDropped != canvasAreasManager.contentWorkspace)
+            {
+                Debug.Log("dropou em bloco");
+                BlockSlot slot = BlockUIUtils.GetBlockSlotByEventData(eventData); 
+                if (slot != null) blocksFactory.ConnectToSlot(ui, false, slot.transform);
+            } else {
+                Debug.Log("dropou em workspace");
+                blocksFactory.ConnectToSlot(ui, true, canvasAreasManager.contentWorkspace);
+            }
+        }
+        ui = null;
+    }
 }

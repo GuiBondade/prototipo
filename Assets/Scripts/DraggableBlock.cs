@@ -1,19 +1,18 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-[RequireComponent(typeof(BlockUI))]
 public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerUpHandler
 {
     [HideInInspector] public BlockUI blockUI;
-    //public BlockSlot blockSlot;
-    private RectTransform rect; // ns se precisa
+    private RectTransform rect;
     private CanvasGroup canvasGroup;
     private CanvasAreasManager canvasAreasManager;
     private ZoomScrollWorkspace scrollWorkspace;
 
+    private BlocksFactory blocksFactory;
+
     private Transform originalParent;
-    private Vector3 originalLocalPos;
-    public float dragHeightCache;
+    //private Vector3 originalLocalPos;
 
     private bool isRightClickDragging = false;
 
@@ -30,9 +29,13 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         rect = GetComponent<RectTransform>(); // ns se precisa
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
-        
+    }
+    
+    void Start() 
+    {
         canvasAreasManager = CanvasAreasManager.instancia;
         scrollWorkspace = canvasAreasManager.visibleWorkspace.GetComponent<ZoomScrollWorkspace>();
+        blocksFactory = BlocksFactory.instance;
     }
 
     public void OnBeginDrag(PointerEventData eventData) {
@@ -44,30 +47,27 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
         BlockerManager.instancia.Reset();
 
-        transform.SetAsLastSibling(); // fica na frente de tudo
-
         originalParent = transform.parent;
-        originalLocalPos = transform.localPosition;
+        //originalLocalPos = transform.localPosition;
         canvasGroup.blocksRaycasts = false;
 
-        // Calcular altura total da linha arrastada e guardar no cache
-        dragHeightCache = blockUI.GetTailHeight();
-
         // Subtrai essa altura dos blockSpacers dos ancestrais do bloco sendo arrastado
-        if (blockUI.bodyAncestors != null && blockUI.bodyAncestors.Count > 0) // originalParent = slotBody
-            /* if (originalParent.GetComponent<BlockSlot>().slotType == BlockSlot.SlotType.Body) {
-                originalParent.GetComponentInParent<BlockUI>().bodySpacer.sizeDelta += new Vector2(0, 30);
-            } */
-            //Debug.Log($"Subtraindo altura de: {blockUI.bodyAncestors.Count} ancestrais do bloco arrastado em: {dragHeightCache}");
-            blockUI.AdjustBodySpacers(-dragHeightCache);
-            if (originalParent != canvasAreasManager.contentWorkspace && originalParent.TryGetComponent<BlockSlot>(out BlockSlot slot)) {
-                if (slot.slotType == BlockSlot.SlotType.Body) {
-                    blockUI.AdjustBodySpacers(30);
-                }
-            } 
+        if (blockUI.bodyAncestors != null && blockUI.bodyAncestors.Count > 0) { // originalParent = slotBody
+            blockUI.AdjustBodySpacers(-(blockUI.GetTailHeight()));
+        }
+        if (originalParent != canvasAreasManager.contentWorkspace && originalParent.TryGetComponent<BlockSlot>(out BlockSlot slot)) {
+            if (slot.slotType == SlotType.Body) { //significa que ta tirando o filho direto do body, junto a seus filhos(deixando o slot vazio de blocos)
+                blockUI.AdjustBodySpacers(blockUI.defaultSpacerHeight);
+            }
+        } 
+        blockUI.AssignBodyAncestorsRecursive(null, null);
 
         // Parenta na workspace (ou root) para arrastar livremente
         transform.SetParent(canvasAreasManager.canvasProgramming, true);
+
+        // resetar currentblock do slot que tava alocado
+        var slotParent = originalParent.GetComponent<BlockSlot>();
+        if (slotParent != null) slotParent.currentBlock = null;
 
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -84,28 +84,31 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
     public void OnEndDrag(PointerEventData eventData) {
         if (isRightClickDragging || eventData.button == PointerEventData.InputButton.Right) return;
-        canvasGroup.blocksRaycasts = true;
         
         scrollWorkspace.blockInDrag = null;
 
         // Se soltar fora da workspace, destruir
         if (!RectTransformUtility.RectangleContainsScreenPoint(canvasAreasManager.visibleWorkspace, eventData.position, eventData.pressEventCamera)) {
-            Destroy(gameObject);
+            blocksFactory.CleanUpBlock(blockUI);
         }
         // verificar se foi solto em um slot de bloco, caso não, resetar os ancestrais
         else
         {
-            var parentBlock = transform.parent.GetComponentInParent<BlockUI>();
-            if (parentBlock == null)
+            // Se estiver sobre um BlockSlot, coloca como filho dele
+            var placeDropped = eventData.pointerEnter?.transform;
+            if (placeDropped != null && placeDropped != canvasAreasManager.contentWorkspace)
             {
-                transform.SetParent(canvasAreasManager.contentWorkspace, true);
-                // resetar ancestrais
-                blockUI.AssignBodyAncestorsRecursive(null, null);
-                // resetar currentblock do slot que tava alocado
-                var slotParent = originalParent.GetComponent<BlockSlot>();
-                if (slotParent != null) slotParent.currentBlock = null;
+                Debug.Log("dropou em bloco");
+                BlockSlot slot = BlockUIUtils.GetBlockSlotByEventData(eventData); 
+                if (slot != null) blocksFactory.ConnectToSlot(blockUI, false, slot.transform);
+            } else {
+                Debug.Log("dropou em workspace");
+                blocksFactory.ConnectToSlot(blockUI, true, canvasAreasManager.contentWorkspace);
             }
+
         }
+
+        canvasGroup.blocksRaycasts = true;
     }
 
     public void OnPointerDown(PointerEventData eventData)

@@ -24,7 +24,6 @@ public class AdjustWidthByText : MonoBehaviour
         float biggestChildWidth = 0;
         for (int j = 0; j < fontWidthGO.transform.childCount; j++ ) {
             var child = fontWidthGO.transform.GetChild(j);
-            Debug.Log("Child: "+j);
             float childWidth = 0;
             for (int k = 0; k < child.transform.childCount; k++ ) {
                 var childElement = child.transform.GetChild(k); // checkmark e tmp text
@@ -32,30 +31,26 @@ public class AdjustWidthByText : MonoBehaviour
                 var childElementRect = childElement.GetComponent<RectTransform>();
                 if  (childText != null) {
                     LayoutElement layout;
-                    if (childText.TryGetComponent<LayoutElement>(out layout)) listLabelLayout.Add(layout);    
-                    Debug.Log("layout: "+layout);                
+                    if (childText.TryGetComponent<LayoutElement>(out layout)) listLabelLayout.Add(layout);                  
                     childText.ForceMeshUpdate(); //precisa?
                     childWidth += childText.preferredWidth;    
                 }
                 LayoutRebuilder.ForceRebuildLayoutImmediate(childElementRect);
-                Debug.Log(" width " +k+ " child:"+childWidth);
             }
             if (biggestChildWidth < childWidth) biggestChildWidth = childWidth;
         }
-        Debug.Log("Biggest child width text: "+biggestChildWidth);
         foreach (LayoutElement layout in listLabelLayout) {
             layout.preferredWidth = biggestChildWidth;
         }
         var childPadding = fontWidthGO.transform.GetChild(0).GetComponent<HorizontalLayoutGroup>().padding;
         biggestChildWidth += childPadding.left + childPadding.right;
         var fontWidthRect = fontWidthGO.GetComponent<RectTransform>();
-        Debug.Log("Biggest child width: "+biggestChildWidth);
         fontWidthRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,biggestChildWidth);
         var targetLayoutElem = targetRect.GetComponent<LayoutElement>();
         if (targetLayoutElem != null) targetLayoutElem.preferredWidth = biggestChildWidth;
         targetRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,biggestChildWidth);
         //LayoutRebuilder.ForceRebuildLayoutImmediate(ancestorRect.GetComponent<RectTransform>());
         LayoutRebuilder.ForceRebuildLayoutImmediate(targetRect);
-        Debug.Log("Adjusted width");
+        //Debug.Log("Adjusted width");
     }
 }

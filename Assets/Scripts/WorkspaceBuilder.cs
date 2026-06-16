@@ -18,11 +18,11 @@ public class WorkspaceBuilder : MonoBehaviour
     private ParameterNode[] paramDadosArray;
     private int blockIdCounter = 0;
     private int paramIdCounter = 0;
-
-    private int blockRootId;
+    private int spaceBetweenBlocks = 0;
+    private int blockRootId = 0;
 
     public BlockDatas blockDatas;
-    public blocksFactory blocksFactory;
+    public BlocksFactory blocksFactory;
 
     public RectTransform workspace;
 
@@ -63,47 +63,39 @@ public class WorkspaceBuilder : MonoBehaviour
             return true;
         }
 
-        GameObject selectedValue = parameter.selectedValue;
-        if (selectedValue == null) {
-            Debug.Log("Erro no Salvamento - Parametro não settado no parametro: " + parameter);
-            //resetgeral? (so dar log de erro, e deixar inexecutavel, dai na hora de salvar de novo ele pula as que ja tiver salvo exceto pelas marcadas como erro)
-                /* paramIdMap.Clear();
-                blockIdMap.Clear();
-                parametros.Clear();
-                blocos.Clear();
-                nodesData.Clear();
-                paramIdCounter = 0; 
-                blockIdCounter = 0; */
-            id = -1;
-            return false; // reset geral a ser feito (so dar log de erro, e deixar inexecutavel, dai na hora de salvar de novo ele pula as que ja tiver salvo exceto pelas marcadas como erro)
-        }
         int myId = paramIdCounter++;
         paramIdMap[parameter] = myId;
 
-        string valor = selectedValue.GetComponent<ValueInfo>().value;
-        if (valor == "Digitar Valor") valor = parameter.GetComponent<ParameterConfig>().inputText.GetComponent<TMP_InputField>().text;
-        // if valor == *variavel*, como faz????
-        ParameterType typeParameter = parameter.type;
-        /*
-            string typeParameter = "";
-            ParameterSetup parameterSetup; // pelo jeito precisa
-            if (parameter.TryGetComponent<ParameterSetup>(out parameterSetup)) { // parameter é refHolder, da certo?
-                typeParameter = parameterSetup.GetType().AssemblyQualifiedName; //antes tava: parameterSetup.type; 
+        string variableName = null;
+        string valor = parameter.selectedValueKey;
+        if (parameter.selectedVariableName != null) {
+            variableName = parameter.selectedVariableName;
+        } else {
+            if (valor == null) {
+                Debug.Log("Erro no Salvamento - Parametro não settado no parametro: " + parameter);
+                valor = parameter.placeholderLabel.text;
+                // ???(so dar log de erro, e deixar inexecutavel, dai na hora de salvar de novo ele pula as que ja tiver salvo exceto pelas marcadas como erro)
+            } else if (valor == "Digitar Valor") {
+                valor = parameter.inputTextInstance.GetComponent<TMP_InputField>().text;
+                // talvez na verdade deixar valor como "Digitar Valor", mas salvar de outra forma o int do input, sei la
             }
-        */
+        }
+        
+        ParameterType typeParameter = parameter.type;
 
         var paramNode = new ParameterNode {
             id = myId,
             type = typeParameter,
             value = valor,
+            varName = variableName,
             leftOperandId = -1,
             rightOperandId = -1
         };
 
-        if (parameter.leftOperand != null && TryGetParameterNode(parameter.leftOperand.GetComponent<ReferenceHolder>(), out int leftId)) {
+        if (parameter.leftOperand != null && TryGetParameterNode(parameter.leftOperand, out int leftId)) {
             paramNode.leftOperandId = leftId;
         }
-        if (parameter.rightOperand != null && TryGetParameterNode(parameter.rightOperand.GetComponent<ReferenceHolder>(), out int rightId)) {
+        if (parameter.rightOperand != null && TryGetParameterNode(parameter.rightOperand, out int rightId)) {
             paramNode.rightOperandId = rightId;
         }
 
@@ -119,6 +111,8 @@ public class WorkspaceBuilder : MonoBehaviour
         blockIdMap[block] = myId;
 
         if (isRoot) blockRootId = myId;
+
+        Debug.Log(myId + " " + block.data.id + " " + blockRootId);
 
         var bloco = new BlockNode {
             id = myId,
@@ -183,8 +177,10 @@ public class WorkspaceBuilder : MonoBehaviour
             if (rootBlockId >= 0) {
                 if (!rootInstancedList.Contains(rootBlockId)) {// ver se esse id é de bloco ja instanciado
                     rootInstancedList.Add(rootBlockId); // se nao, instancia e adiciona na lista
-                    InstantiateBlock(rootBlockId, workspace); // workspace é ref
+                    spaceBetweenBlocks += 100;
+                    InstantiateBlock(rootBlockId, true, workspace); // workspace é ref
                 }
+                spaceBetweenBlocks = 0;
             } else {
                 Debug.Log("rootId não settado");
             }
@@ -193,48 +189,51 @@ public class WorkspaceBuilder : MonoBehaviour
         StartCoroutine(RebuildDepois());
     }
 
-    private void InstantiateBlock(int blockId, RectTransform parent) {
-        Debug.Log(blockId);
-        Debug.Log(blocoDadosArray);
-        Debug.Log(blocoDadosArray[blockId]);
-        
+    private void InstantiateBlock(int blockId, bool isRoot, RectTransform parent) {
         var blockNode = blocoDadosArray[blockId];
         var blockData = blockDatas.GetData(blockNode.blockDataId);
-
-        var blockInstance = blocksFactory.InitializeBlock(blockData, parent);
-
-        // olha oq faz no paletteItem e poe aqui sepa
+        
+        var blockUI = blocksFactory.InitializeBlock(blockData, isRoot, parent);
+        if (isRoot) blockUI.GetComponent<RectTransform>().localPosition = new Vector2(spaceBetweenBlocks, 0f);
 
         foreach (var rootParamId in blockNode.paramIds) { // todos os parametros primordiais
-            var paramReference = InstantiateParameter(rootParamId, ui.TopSlot).GetComponent<ReferenceHolder>(); // tem que dar .transform no topslot?   
-            ui.parameterInitialList.Add(paramReference);
+            var paramReference = InstantiateParameter(rootParamId, blockUI.TopSlot); // tem que dar .transform no topslot?   
+            blockUI.parameterInitialList.Add(paramReference);
             //layout rebuilder no paramroot?
         }
 
         if (blockNode.next >= 0) { // faz sentido usar essa operação?
-            var slotNextRect = ui.slotNext.GetComponent<RectTransform>();
-            InstantiateBlock(blockNode.next, slotNextRect);
+            var slotNextRect = blockUI.slotNext.GetComponent<RectTransform>();
+            InstantiateBlock(blockNode.next, false, slotNextRect);
         }
         if (blockNode.body >= 0) {
-            var slotBodyRect = ui.slotBody.GetComponent<RectTransform>();
-            InstantiateBlock(blockNode.body, slotBodyRect);
+            var slotBodyRect = blockUI.slotBody.GetComponent<RectTransform>();
+            InstantiateBlock(blockNode.body, false, slotBodyRect);
         }
     }
 
-    private GameObject InstantiateParameter(int paramId, RectTransform blockParent) { // DA PRA FAZER SER ACESSIVEL PELO PALLETE ITEM E DAI LA SER SO CHAMADA DE FUNÇÃO
+    private ReferenceHolder InstantiateParameter(int paramId, RectTransform blockParent) { // DA PRA FAZER SER ACESSIVEL PELO PALLETE ITEM E DAI LA SER SO CHAMADA DE FUNÇÃO
         var paramNode = paramDadosArray[paramId]; 
 
         var paramReference = blocksFactory.InitializeParameter(paramNode.value, paramNode.type, blockParent);
 
         var paramRect = paramReference.GetComponent<RectTransform>();
         
-        //tem que settar data do param aqui? (dava pra ter tipo um blockData, pra cada, sei la)
+        //tem que settar data do param aqui? (dava pra ter tipo um blockData, pra cada, sei la) precisa??? preguiça
         // tirar os operand do refholder, e criar um ParamData meio que pra isso (nao sei se precisa mesmo, ta de boa por enquanto)
         
-        if (paramNode.leftOperandId >= 0) paramReference.leftOperand = InstantiateParameter(paramNode.leftOperandId, paramRect);//arrumar algo?
-        if (paramNode.rightOperandId >= 0) paramReference.rightOperand = InstantiateParameter(paramNode.rightOperandId, paramRect);//arrumar algo?
+        if (paramNode.leftOperandId >= 0) {
+            var leftOperand = InstantiateParameter(paramNode.leftOperandId, paramRect);//arrumar algo?
+            paramReference.leftOperand = leftOperand;
+            leftOperand.transform.SetAsFirstSibling();
+        }
+        if (paramNode.rightOperandId >= 0) {
+            var rightOperand = InstantiateParameter(paramNode.rightOperandId, paramRect);//arrumar algo?
+            paramReference.rightOperand = rightOperand;
+            rightOperand.transform.SetAsLastSibling();
+        }
 
-        return paramInstance;
+        return paramReference;
     }
 
     IEnumerator RebuildDepois()

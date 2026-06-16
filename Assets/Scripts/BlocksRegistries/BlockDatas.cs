@@ -5,22 +5,17 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "BlockDatas", menuName = "ScriptableObjects/BlockDatas")]
 public class BlockDatas : ScriptableObject
 {
-    [Serializable]
-    public struct DataEntry {
-        public BlockData data;
-    }
-
-    [SerializeField] public List<DataEntry> listDatas;
+    [SerializeField] public List<BlockData> listDatas;
 
     private Dictionary<string, BlockData> dictionaryDatas;
 
     public void Initialize() {
         dictionaryDatas = new Dictionary<string, BlockData>();//
         foreach (var entry in listDatas) {
-            if (entry.data == null) continue;
-            var keyId = entry.data.id;
+            if (entry == null) continue;
+            var keyId = entry.id;
             if (!dictionaryDatas.ContainsKey(keyId)) {
-                dictionaryDatas.Add(keyId, entry.data);
+                dictionaryDatas.Add(keyId, entry);
             }
         }
     }

@@ -100,7 +100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -646,14 +646,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3819225133399394845}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 94b248225402d11468fe9b0567b4d720, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &3659919123171793018
 CanvasRenderer:
@@ -1133,7 +1133,7 @@ MonoBehaviour:
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
-  m_ScrollSensitivity: 10
+  m_ScrollSensitivity: 30
   m_Viewport: {fileID: 3819225135172452589}
   m_HorizontalScrollbar: {fileID: 0}
   m_VerticalScrollbar: {fileID: 3819225133521480284}
@@ -1372,7 +1372,7 @@ MonoBehaviour:
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
-  m_ScrollSensitivity: 10
+  m_ScrollSensitivity: 30
   m_Viewport: {fileID: 3819225134369534806}
   m_HorizontalScrollbar: {fileID: 0}
   m_VerticalScrollbar: {fileID: 3819225133875919224}
@@ -1393,6 +1393,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3819225134210582058}
   - component: {fileID: 2134181988334439035}
+  - component: {fileID: 2373152039394558971}
   - component: {fileID: 3819225134210582056}
   - component: {fileID: 6505454448258997567}
   - component: {fileID: 3693926779993649615}
@@ -1441,19 +1442,42 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rootParameter: {fileID: 0}
+  blocksFactory: {fileID: 0}
   parentesesInstance: {fileID: 537954446766339063}
   childParamLayout: {fileID: 3819225133399394845}
   inputTextPrefab: {fileID: 3031456474331586295, guid: 73567ca758bb2c24ca301bec2a8ee502, type: 3}
-  placeholderLabel: {fileID: 1937291377622307546}
+  inputTextInstance: {fileID: 0}
+  placeholderLabel: {fileID: 2354748334198311220}
   sectionContent: {fileID: 3819225134781157742}
   sectionPrefab: {fileID: 8797927327906657172, guid: 3c2b1a986a5de1642b2d23ffe047b971, type: 3}
+  type: 0
   leftOperand: {fileID: 0}
   rightOperand: {fileID: 0}
   selectionArea: {fileID: 3819225134897435785}
   valueContent: {fileID: 3819225134119873166}
   valuePrefab: {fileID: 8644571329668642982, guid: 7b79af0db8f04ef4db6e6cdb82783eeb, type: 3}
-  selectedValue: {fileID: 0}
+  selectedValueVisual: {fileID: 0}
+  selectedValueSection: 0
+  selectedValueKey: 
+  selectedVariableName: 
+  varNameOfParent: 
   selectedSection: {fileID: 0}
+--- !u!114 &2373152039394558971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3819225134210582061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48066db78a6e9a0418e4cbd9cd2adcc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  refs: {fileID: 2134181988334439035}
+  sectionDatabase: {fileID: 11400000, guid: 3ba40abe0ba5ae94eb7a523af03c8912, type: 2}
+  inputTextInstance: {fileID: 0}
+  paramData: {fileID: 0}
 --- !u!114 &3819225134210582056
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1467,9 +1491,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   refs: {fileID: 2134181988334439035}
-  ParameterPrefab: {fileID: 0}
-  inputText: {fileID: 0}
-  sectionSelected: 0
 --- !u!114 &6505454448258997567
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1539,14 +1560,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3819225134210582061}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 94b248225402d11468fe9b0567b4d720, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &3819225134369534809
 GameObject:
